@@ -293,6 +293,38 @@
             }
         }
 
+        async function openFileDialog() {
+            const { open } = window.__TAURI__.dialog;
+            const { invoke } = window.__TAURI__.tauri;
+
+            try {
+                const selected = await open({
+                    filters: [{
+                        name: 'Markdown',
+                        extensions: ['md', 'markdown']
+                    }],
+                    multiple: false
+                });
+
+                if (selected && typeof selected === 'string') {
+                    await invoke('open_dropped_file', { path: selected });
+                    await loadContent();
+                }
+            } catch (error) {
+                console.error('Failed to open file:', error);
+            }
+        }
+
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Cmd+O (Mac) or Ctrl+O (Windows/Linux) to open file
+                if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+                    e.preventDefault();
+                    openFileDialog();
+                }
+            });
+        }
+
         function setupDragAndDrop() {
             const { invoke } = window.__TAURI__.tauri;
 
@@ -355,6 +387,9 @@
 
             // Set up drag and drop
             setupDragAndDrop();
+
+            // Set up keyboard shortcuts (Cmd+O to open file)
+            setupKeyboardShortcuts();
 
             // Listen for file change events from backend
             const { listen } = window.__TAURI__.event;
