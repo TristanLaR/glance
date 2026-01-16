@@ -48,6 +48,85 @@
             color: #656d76;
         }
 
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            color: #656d76;
+        }
+
+        .welcome h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 0.5em;
+            color: #24292f;
+        }
+
+        .welcome p {
+            font-size: 1.1em;
+            margin-bottom: 2em;
+        }
+
+        .welcome .instructions {
+            text-align: left;
+            background: #f6f8fa;
+            padding: 1.5em 2em;
+            border-radius: 8px;
+            border: 1px solid #d0d7de;
+        }
+
+        .welcome .instructions p {
+            margin-bottom: 0.5em;
+            font-weight: 500;
+            color: #24292f;
+        }
+
+        .welcome .instructions ul {
+            margin: 0;
+            padding-left: 1.5em;
+        }
+
+        .welcome .instructions li {
+            margin: 0.5em 0;
+        }
+
+        .welcome kbd {
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+            font-size: 0.9em;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .welcome {
+                color: #8b949e;
+            }
+
+            .welcome h1 {
+                color: #e6edf3;
+            }
+
+            .welcome .instructions {
+                background: #161b22;
+                border-color: #30363d;
+            }
+
+            .welcome .instructions p {
+                color: #e6edf3;
+            }
+
+            .welcome kbd {
+                background: #21262d;
+                border-color: #30363d;
+                color: #e6edf3;
+            }
+        }
+
         /* Code block container for copy button */
         .code-block-wrapper {
             position: relative;
@@ -245,6 +324,193 @@
                 color: #8b949e;
                 background-color: rgba(33, 38, 45, 0.95);
                 border-color: #30363d;
+            }
+        }
+
+        /* Large file mode - TOC and accordion styles */
+        .large-file-toc {
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .large-file-toc h2 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #24292f;
+        }
+
+        .large-file-toc ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .large-file-toc li {
+            margin: 4px 0;
+        }
+
+        .large-file-toc a {
+            color: #0969da;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .large-file-toc a:hover {
+            text-decoration: underline;
+        }
+
+        .large-file-toc .toc-level-1 { padding-left: 0; }
+        .large-file-toc .toc-level-2 { padding-left: 16px; }
+        .large-file-toc .toc-level-3 { padding-left: 32px; }
+        .large-file-toc .toc-level-4 { padding-left: 48px; }
+        .large-file-toc .toc-level-5 { padding-left: 64px; }
+        .large-file-toc .toc-level-6 { padding-left: 80px; }
+
+        /* Accordion section styles */
+        .section-accordion {
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .section-accordion summary {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            background-color: #f6f8fa;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #24292f;
+            list-style: none;
+            user-select: none;
+        }
+
+        .section-accordion summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .section-accordion summary::before {
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 5px solid #57606a;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            margin-right: 10px;
+            transition: transform 0.15s ease;
+        }
+
+        .section-accordion[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        .section-accordion summary:hover {
+            background-color: #eaeef2;
+        }
+
+        .section-accordion .section-content {
+            padding: 16px;
+            border-top: 1px solid #d0d7de;
+        }
+
+        .section-accordion .section-level {
+            display: inline-block;
+            min-width: 24px;
+            height: 18px;
+            line-height: 18px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            background-color: #ddf4ff;
+            color: #0969da;
+            border-radius: 10px;
+            margin-right: 8px;
+        }
+
+        .section-accordion .section-level-0 {
+            background-color: #fff8c5;
+            color: #9a6700;
+        }
+
+        /* Large file mode banner */
+        .large-file-banner {
+            background-color: #fff8c5;
+            border: 1px solid #d4a72c;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #735c0f;
+        }
+
+        .large-file-banner code {
+            background-color: rgba(0, 0, 0, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .large-file-toc {
+                background-color: #161b22;
+                border-color: #30363d;
+            }
+
+            .large-file-toc h2 {
+                color: #c9d1d9;
+            }
+
+            .large-file-toc a {
+                color: #58a6ff;
+            }
+
+            .section-accordion {
+                border-color: #30363d;
+            }
+
+            .section-accordion summary {
+                background-color: #161b22;
+                color: #c9d1d9;
+            }
+
+            .section-accordion summary::before {
+                border-left-color: #8b949e;
+            }
+
+            .section-accordion summary:hover {
+                background-color: #21262d;
+            }
+
+            .section-accordion .section-content {
+                border-top-color: #30363d;
+            }
+
+            .section-accordion .section-level {
+                background-color: #388bfd26;
+                color: #58a6ff;
+            }
+
+            .section-accordion .section-level-0 {
+                background-color: #bb800926;
+                color: #e3b341;
+            }
+
+            .large-file-banner {
+                background-color: #bb800926;
+                border-color: #bb8009;
+                color: #e3b341;
+            }
+
+            .large-file-banner code {
+                background-color: rgba(255, 255, 255, 0.1);
             }
         }
     </style>
@@ -474,6 +740,103 @@
             });
         }
 
+        // Generate a unique ID for a section based on its title
+        function generateSectionId(title, index) {
+            const slug = title.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+            return `section-${index}-${slug || 'section'}`;
+        }
+
+        // Render large file mode with TOC and accordion sections
+        async function renderLargeFileMode(data, contentEl) {
+            const { sections, file_dir } = data;
+
+            // Configure marked for GFM
+            marked.setOptions({ gfm: true, breaks: true });
+            marked.use({ renderer: createImageRenderer(file_dir) });
+
+            // Create banner
+            const banner = document.createElement('div');
+            banner.className = 'large-file-banner';
+            banner.innerHTML = 'Large file mode: Sections are collapsed by default. Use <code>--no-truncate</code> or set <code>no_truncate = true</code> in config to render the entire file.';
+
+            // Create TOC
+            const toc = document.createElement('nav');
+            toc.className = 'large-file-toc';
+            toc.innerHTML = '<h2>Table of Contents</h2>';
+            const tocList = document.createElement('ul');
+
+            // Create section containers
+            const sectionsContainer = document.createElement('div');
+            sectionsContainer.className = 'sections-container';
+
+            for (let i = 0; i < sections.length; i++) {
+                const section = sections[i];
+                const sectionId = generateSectionId(section.title, i);
+
+                // Add to TOC
+                const tocItem = document.createElement('li');
+                tocItem.className = `toc-level-${section.level}`;
+                const tocLink = document.createElement('a');
+                tocLink.href = `#${sectionId}`;
+                tocLink.textContent = section.title || 'Untitled Section';
+                tocLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetAccordion = document.getElementById(sectionId);
+                    if (targetAccordion) {
+                        targetAccordion.open = true;
+                        targetAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+                tocItem.appendChild(tocLink);
+                tocList.appendChild(tocItem);
+
+                // Create accordion section
+                const accordion = document.createElement('details');
+                accordion.className = 'section-accordion';
+                accordion.id = sectionId;
+
+                const summary = document.createElement('summary');
+                if (section.level > 0) {
+                    const levelBadge = document.createElement('span');
+                    levelBadge.className = `section-level section-level-${section.level}`;
+                    levelBadge.textContent = `H${section.level}`;
+                    summary.appendChild(levelBadge);
+                } else {
+                    const levelBadge = document.createElement('span');
+                    levelBadge.className = 'section-level section-level-0';
+                    levelBadge.textContent = 'Intro';
+                    summary.appendChild(levelBadge);
+                }
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = section.title || 'Untitled Section';
+                summary.appendChild(titleSpan);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'section-content markdown-body';
+                contentDiv.innerHTML = marked.parse(section.content);
+
+                accordion.appendChild(summary);
+                accordion.appendChild(contentDiv);
+                sectionsContainer.appendChild(accordion);
+            }
+
+            toc.appendChild(tocList);
+
+            // Assemble the page
+            contentEl.innerHTML = '';
+            contentEl.appendChild(banner);
+            contentEl.appendChild(toc);
+            contentEl.appendChild(sectionsContainer);
+
+            // Render Mermaid diagrams in all sections
+            await renderMermaidDiagrams();
+
+            // Apply syntax highlighting
+            highlightCodeBlocks();
+        }
+
         async function loadContent() {
             const contentEl = document.getElementById('content');
 
@@ -482,6 +845,32 @@
                 const { invoke } = window.__TAURI__.tauri;
                 const data = await invoke('get_markdown_content');
 
+                // Check if no file is loaded (empty content)
+                if (!data.content || data.content.trim() === '') {
+                    contentEl.innerHTML = `
+                        <div class="welcome">
+                            <h1>Glance</h1>
+                            <p>A minimal markdown viewer</p>
+                            <div class="instructions">
+                                <p>Open a markdown file to get started:</p>
+                                <ul>
+                                    <li>Drag and drop a <code>.md</code> file here</li>
+                                    <li>Press <kbd>Cmd+O</kbd> (macOS) or <kbd>Ctrl+O</kbd> (Windows/Linux) to open a file</li>
+                                    <li>Double-click a <code>.md</code> file in Finder/Explorer (if set as default app)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    return true;
+                }
+
+                // Check if we're in large file mode
+                if (data.is_large_file && data.sections && data.sections.length > 0) {
+                    await renderLargeFileMode(data, contentEl);
+                    return true;
+                }
+
+                // Normal mode: render full content
                 // Configure marked for GFM (GitHub Flavored Markdown)
                 marked.setOptions({
                     gfm: true,

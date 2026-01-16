@@ -8,6 +8,7 @@ description = "A minimal markdown viewer"
 tauri = { version = "1.8", features = ["dialog-open", "global-shortcut-all", "protocol-asset"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+toml = "0.8"
 notify = { version = "6", default-features = false, features = ["macos_kqueue"] }
 directories = "5"
 

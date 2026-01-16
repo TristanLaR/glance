@@ -13,6 +13,9 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 
+/// Threshold for large file mode (500KB)
+const LARGE_FILE_THRESHOLD: u64 = 500 * 1024;
+
 /// Window state for persistence
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct WindowState {
@@ -35,7 +38,8 @@ impl Default for WindowState {
 
 impl WindowState {
     fn config_path() -> Option<PathBuf> {
-        ProjectDirs::from("com", "glance", "glance").map(|dirs| dirs.config_dir().join("window.json"))
+        ProjectDirs::from("com", "glance", "glance")
+            .map(|dirs| dirs.config_dir().join("window.json"))
     }
 
     fn load() -> Self {
@@ -57,6 +61,40 @@ impl WindowState {
     }
 }
 
+/// Application configuration from config.toml
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+struct AppConfig {
+    #[serde(default)]
+    no_truncate: bool,
+}
+
+impl AppConfig {
+    fn config_path() -> Option<PathBuf> {
+        ProjectDirs::from("com", "glance", "glance")
+            .map(|dirs| dirs.config_dir().join("config.toml"))
+    }
+
+    fn load() -> Self {
+        Self::config_path()
+            .and_then(|path| fs::read_to_string(&path).ok())
+            .and_then(|content| toml::from_str(&content).ok())
+            .unwrap_or_default()
+    }
+}
+
+/// Section extracted from markdown for TOC/accordion display
+#[derive(Clone, serde::Serialize)]
+struct MarkdownSection {
+    /// Heading level (1-6)
+    level: u8,
+    /// Heading title text
+    title: String,
+    /// Content of this section (including the heading)
+    content: String,
+    /// Line number where this section starts (0-indexed)
+    start_line: usize,
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -75,49 +113,72 @@ fn main() {
         }
     }
 
-    // Require a file argument
-    if args.len() < 2 {
-        eprintln!("Error: No markdown file specified");
-        eprintln!("Usage: glance <file.md> [options]");
-        process::exit(1);
-    }
+    // Parse --no-truncate flag
+    let no_truncate_flag = args.iter().any(|arg| arg == "--no-truncate");
 
-    let file_path = PathBuf::from(&args[1]);
+    // Find file argument (first non-flag argument after program name)
+    let file_arg = args.iter().skip(1).find(|arg| !arg.starts_with("--"));
 
-    // Check if file exists
-    if !file_path.exists() {
-        eprintln!("Error: File not found: {}", file_path.display());
-        process::exit(1);
-    }
+    // Load config file
+    let config = AppConfig::load();
+    let no_truncate = no_truncate_flag || config.no_truncate;
 
-    // Read file content
-    let content = match fs::read_to_string(&file_path) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Error: Failed to read file: {}", e);
-            process::exit(1);
+    // If a file is provided via CLI, load it; otherwise start with empty state
+    // (file can be opened later via drag-drop, Cmd+O, or OS file association)
+    let (file_path, file_name, content, is_large_file) = match file_arg {
+        Some(path) => {
+            let file_path = PathBuf::from(path);
+
+            // Check if file exists
+            if !file_path.exists() {
+                eprintln!("Error: File not found: {}", file_path.display());
+                process::exit(1);
+            }
+
+            // Get file size
+            let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
+
+            // Read file content
+            let content = match fs::read_to_string(&file_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("Error: Failed to read file: {}", e);
+                    process::exit(1);
+                }
+            };
+
+            // Check if file is empty
+            if content.trim().is_empty() {
+                eprintln!("Error: File is empty: {}", file_path.display());
+                process::exit(1);
+            }
+
+            // Determine if we should use large file mode
+            let is_large_file = file_size > LARGE_FILE_THRESHOLD && !no_truncate;
+
+            // Get absolute path and filename for window title
+            let absolute_path = fs::canonicalize(&file_path).unwrap_or_else(|_| file_path.clone());
+            let file_name = file_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "Glance".to_string());
+
+            (
+                absolute_path.to_string_lossy().to_string(),
+                file_name,
+                content,
+                is_large_file,
+            )
+        }
+        None => {
+            // No file provided - start with empty state
+            // File will be opened via OS file association, drag-drop, or Cmd+O
+            (String::new(), String::from("Glance"), String::new(), false)
         }
     };
 
-    // Check if file is empty
-    if content.trim().is_empty() {
-        eprintln!("Error: File is empty: {}", file_path.display());
-        process::exit(1);
-    }
-
-    // Get absolute path and filename for window title
-    let absolute_path = fs::canonicalize(&file_path).unwrap_or_else(|_| file_path.clone());
-    let file_name = file_path
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_else(|| "Glance".to_string());
-
     // Run the Tauri application
-    run_app(
-        absolute_path.to_string_lossy().to_string(),
-        file_name,
-        content,
-    );
+    run_app(file_path, file_name, content, is_large_file, no_truncate);
 }
 
 fn print_help() {
@@ -137,6 +198,7 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
     let content = state.content.lock().unwrap();
     let file_path = state.file_path.lock().unwrap();
     let file_name = state.file_name.lock().unwrap();
+    let is_large_file = *state.is_large_file.lock().unwrap();
 
     // Get directory of the markdown file for resolving relative image paths
     let file_dir = PathBuf::from(file_path.as_str())
@@ -144,11 +206,20 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default();
 
+    // Extract sections if in large file mode
+    let sections = if is_large_file {
+        extract_sections(&content)
+    } else {
+        Vec::new()
+    };
+
     MarkdownContent {
         content: content.clone(),
         file_path: file_path.clone(),
         file_name: file_name.clone(),
         file_dir,
+        is_large_file,
+        sections,
     }
 }
 
@@ -173,21 +244,27 @@ fn open_dropped_file(
         return Err("Only markdown files (.md, .markdown) are supported".to_string());
     }
 
+    // Get file size
+    let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
+
     // Read file content
-    let new_content = fs::read_to_string(&file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+    let new_content =
+        fs::read_to_string(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
 
     if new_content.trim().is_empty() {
         return Err(format!("File is empty: {}", file_path.display()));
     }
 
     // Get absolute path and filename
-    let absolute_path = fs::canonicalize(&file_path)
-        .unwrap_or_else(|_| file_path.clone());
+    let absolute_path = fs::canonicalize(&file_path).unwrap_or_else(|_| file_path.clone());
     let new_file_name = file_path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "Glance".to_string());
+
+    // Check if no_truncate is set
+    let no_truncate = *state.no_truncate.lock().unwrap();
+    let is_large_file = file_size > LARGE_FILE_THRESHOLD && !no_truncate;
 
     // Update state
     {
@@ -201,6 +278,10 @@ fn open_dropped_file(
     {
         let mut file_name_state = state.file_name.lock().unwrap();
         *file_name_state = new_file_name.clone();
+    }
+    {
+        let mut large_file_state = state.is_large_file.lock().unwrap();
+        *large_file_state = is_large_file;
     }
 
     // Update window title
@@ -221,6 +302,10 @@ struct MarkdownContent {
     file_path: String,
     file_name: String,
     file_dir: String,
+    /// Whether this file should be displayed in large file mode (with sections)
+    is_large_file: bool,
+    /// Sections extracted from markdown for accordion display (only when is_large_file is true)
+    sections: Vec<MarkdownSection>,
 }
 
 struct AppState {
@@ -228,14 +313,117 @@ struct AppState {
     file_path: Arc<Mutex<String>>,
     file_name: Arc<Mutex<String>>,
     watcher_control: Arc<Mutex<Option<Sender<PathBuf>>>>,
+    is_large_file: Arc<Mutex<bool>>,
+    no_truncate: Arc<Mutex<bool>>,
 }
 
-fn run_app(file_path: String, file_name: String, content: String) {
-    let window_title = format!("{} - Glance", file_name);
+/// Extract sections from markdown content based on headings
+fn extract_sections(content: &str) -> Vec<MarkdownSection> {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut sections: Vec<MarkdownSection> = Vec::new();
+    let mut in_code_block = false;
+
+    for (line_num, line) in lines.iter().enumerate() {
+        // Track code block state to ignore headings inside code blocks
+        if line.starts_with("```") || line.starts_with("~~~") {
+            in_code_block = !in_code_block;
+            continue;
+        }
+
+        if in_code_block {
+            continue;
+        }
+
+        // Check for ATX-style headings (# Heading)
+        if let Some(heading_match) = parse_heading(line) {
+            sections.push(MarkdownSection {
+                level: heading_match.0,
+                title: heading_match.1,
+                content: String::new(), // Will be filled in later
+                start_line: line_num,
+            });
+        }
+    }
+
+    // Now fill in the content for each section
+    for i in 0..sections.len() {
+        let start_line = sections[i].start_line;
+        let end_line = if i + 1 < sections.len() {
+            sections[i + 1].start_line
+        } else {
+            lines.len()
+        };
+
+        sections[i].content = lines[start_line..end_line].join("\n");
+    }
+
+    // If there's content before the first heading, add it as an intro section
+    if !sections.is_empty() && sections[0].start_line > 0 {
+        let intro_content = lines[0..sections[0].start_line].join("\n");
+        if !intro_content.trim().is_empty() {
+            sections.insert(
+                0,
+                MarkdownSection {
+                    level: 0,
+                    title: "Introduction".to_string(),
+                    content: intro_content,
+                    start_line: 0,
+                },
+            );
+        }
+    }
+
+    // If no sections found, return a single section with all content
+    if sections.is_empty() {
+        sections.push(MarkdownSection {
+            level: 0,
+            title: "Document".to_string(),
+            content: content.to_string(),
+            start_line: 0,
+        });
+    }
+
+    sections
+}
+
+/// Parse a heading line and return (level, title)
+fn parse_heading(line: &str) -> Option<(u8, String)> {
+    let trimmed = line.trim();
+
+    // Count leading # characters
+    let hash_count = trimmed.chars().take_while(|c| *c == '#').count();
+
+    // Valid headings have 1-6 # characters followed by a space
+    if (1..=6).contains(&hash_count) {
+        let rest = &trimmed[hash_count..];
+        if rest.starts_with(' ') || rest.is_empty() {
+            let title = rest.trim().trim_end_matches('#').trim().to_string();
+            return Some((hash_count as u8, title));
+        }
+    }
+
+    None
+}
+
+fn run_app(
+    file_path: String,
+    file_name: String,
+    content: String,
+    is_large_file: bool,
+    no_truncate: bool,
+) {
+    let window_title = if file_name == "Glance" {
+        "Glance".to_string()
+    } else {
+        format!("{} - Glance", file_name)
+    };
+    let has_initial_file = !file_path.is_empty();
     let content = Arc::new(Mutex::new(content));
     let file_path_state = Arc::new(Mutex::new(file_path.clone()));
     let file_name_state = Arc::new(Mutex::new(file_name));
     let watcher_control: Arc<Mutex<Option<Sender<PathBuf>>>> = Arc::new(Mutex::new(None));
+    let is_large_file_state = Arc::new(Mutex::new(is_large_file));
+    let no_truncate_state = Arc::new(Mutex::new(no_truncate));
     let watch_path = PathBuf::from(&file_path);
 
     let watcher_control_for_setup = watcher_control.clone();
@@ -249,16 +437,25 @@ fn run_app(file_path: String, file_name: String, content: String) {
             file_path: file_path_state.clone(),
             file_name: file_name_state.clone(),
             watcher_control,
+            is_large_file: is_large_file_state.clone(),
+            no_truncate: no_truncate_state.clone(),
         })
-        .invoke_handler(tauri::generate_handler![get_markdown_content, open_dropped_file])
+        .invoke_handler(tauri::generate_handler![
+            get_markdown_content,
+            open_dropped_file
+        ])
         .setup(move |app| {
             // Update window title and restore saved position/size
             if let Some(window) = app.get_window("main") {
                 let _ = window.set_title(&window_title);
 
                 // Restore saved window position and size
-                let _ = window.set_position(tauri::PhysicalPosition::new(saved_state.x, saved_state.y));
-                let _ = window.set_size(tauri::PhysicalSize::new(saved_state.width, saved_state.height));
+                let _ =
+                    window.set_position(tauri::PhysicalPosition::new(saved_state.x, saved_state.y));
+                let _ = window.set_size(tauri::PhysicalSize::new(
+                    saved_state.width,
+                    saved_state.height,
+                ));
             }
 
             // Set up file watcher with path switching support
@@ -294,22 +491,31 @@ fn run_app(file_path: String, file_name: String, content: String) {
                     }
                 };
 
+                // Only start watching if we have an initial file
                 let mut current_path = watch_path;
+                let mut watching = has_initial_file && current_path.exists();
 
-                if let Err(e) = watcher.watch(&current_path, RecursiveMode::NonRecursive) {
-                    eprintln!("Failed to watch file: {}", e);
-                    return;
+                if watching {
+                    if let Err(e) = watcher.watch(&current_path, RecursiveMode::NonRecursive) {
+                        eprintln!("Failed to watch file: {}", e);
+                        watching = false;
+                    }
                 }
 
                 loop {
                     // Check for new path to watch (non-blocking)
                     if let Ok(new_path) = path_rx.try_recv() {
-                        // Stop watching old file
-                        let _ = watcher.unwatch(&current_path);
+                        // Stop watching old file if we were watching
+                        if watching {
+                            let _ = watcher.unwatch(&current_path);
+                        }
 
                         // Start watching new file
                         if let Err(e) = watcher.watch(&new_path, RecursiveMode::NonRecursive) {
                             eprintln!("Failed to watch new file: {}", e);
+                            watching = false;
+                        } else {
+                            watching = true;
                         }
 
                         current_path = new_path;
