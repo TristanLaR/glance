@@ -213,6 +213,40 @@
                 color: #6e7681;
             }
         }
+
+        /* Zoom indicator */
+        #zoom-indicator {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #57606a;
+            background-color: rgba(246, 248, 250, 0.95);
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        #zoom-indicator.visible {
+            opacity: 0.6;
+        }
+
+        #zoom-indicator.active {
+            opacity: 1;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #zoom-indicator {
+                color: #8b949e;
+                background-color: rgba(33, 38, 45, 0.95);
+                border-color: #30363d;
+            }
+        }
     </style>
 </head>
 <body>
@@ -221,6 +255,72 @@
     </article>
 
     <script>
+        // Zoom state - persisted in sessionStorage
+        const ZOOM_MIN = 50;
+        const ZOOM_MAX = 200;
+        const ZOOM_STEP = 10;
+        const ZOOM_DEFAULT = 100;
+
+        let currentZoom = parseInt(sessionStorage.getItem('zoomLevel')) || ZOOM_DEFAULT;
+
+        function applyZoom() {
+            const contentEl = document.getElementById('content');
+            contentEl.style.transformOrigin = 'top center';
+            contentEl.style.transform = `scale(${currentZoom / 100})`;
+
+            // Adjust body height to accommodate scaled content
+            document.body.style.minHeight = `${100 * (currentZoom / 100)}%`;
+
+            // Persist zoom level
+            sessionStorage.setItem('zoomLevel', currentZoom);
+
+            // Update zoom indicator
+            updateZoomIndicator();
+        }
+
+        function zoomIn() {
+            if (currentZoom < ZOOM_MAX) {
+                currentZoom = Math.min(currentZoom + ZOOM_STEP, ZOOM_MAX);
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > ZOOM_MIN) {
+                currentZoom = Math.max(currentZoom - ZOOM_STEP, ZOOM_MIN);
+                applyZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = ZOOM_DEFAULT;
+            applyZoom();
+        }
+
+        function updateZoomIndicator() {
+            let indicator = document.getElementById('zoom-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'zoom-indicator';
+                document.body.appendChild(indicator);
+            }
+
+            // Only show indicator when zoom is not at default
+            if (currentZoom !== ZOOM_DEFAULT) {
+                indicator.textContent = `${currentZoom}%`;
+                indicator.classList.add('visible');
+            } else {
+                indicator.classList.remove('visible');
+            }
+
+            // Briefly show indicator on any zoom change, then fade
+            indicator.classList.add('active');
+            clearTimeout(indicator.fadeTimeout);
+            indicator.fadeTimeout = setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 1500);
+        }
+
         // Initialize Mermaid with theme based on system preference
         function initMermaid() {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -454,6 +554,25 @@
                     e.preventDefault();
                     openFileDialog();
                 }
+
+                // Zoom shortcuts - Cmd/Ctrl + Plus/Minus/0
+                if (e.metaKey || e.ctrlKey) {
+                    // Zoom in: Cmd/Ctrl + Plus or Cmd/Ctrl + = (for keyboards without numpad)
+                    if (e.key === '+' || e.key === '=') {
+                        e.preventDefault();
+                        zoomIn();
+                    }
+                    // Zoom out: Cmd/Ctrl + Minus
+                    else if (e.key === '-') {
+                        e.preventDefault();
+                        zoomOut();
+                    }
+                    // Reset zoom: Cmd/Ctrl + 0
+                    else if (e.key === '0') {
+                        e.preventDefault();
+                        resetZoom();
+                    }
+                }
             });
         }
 
@@ -517,10 +636,15 @@
             // Initial load
             await loadContent();
 
+            // Apply saved zoom level from session
+            if (currentZoom !== ZOOM_DEFAULT) {
+                applyZoom();
+            }
+
             // Set up drag and drop
             setupDragAndDrop();
 
-            // Set up keyboard shortcuts (Cmd+O to open file)
+            // Set up keyboard shortcuts (Cmd+O to open file, zoom controls)
             setupKeyboardShortcuts();
 
             // Listen for file change events from backend
