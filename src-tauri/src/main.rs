@@ -92,10 +92,18 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
     let content = state.content.lock().unwrap();
     let file_path = state.file_path.lock().unwrap();
     let file_name = state.file_name.lock().unwrap();
+
+    // Get directory of the markdown file for resolving relative image paths
+    let file_dir = PathBuf::from(file_path.as_str())
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+
     MarkdownContent {
         content: content.clone(),
         file_path: file_path.clone(),
         file_name: file_name.clone(),
+        file_dir,
     }
 }
 
@@ -167,6 +175,7 @@ struct MarkdownContent {
     content: String,
     file_path: String,
     file_name: String,
+    file_dir: String,
 }
 
 struct AppState {

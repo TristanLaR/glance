@@ -117,6 +117,48 @@
             display: block;
         }
 
+        /* Image error placeholder */
+        .image-placeholder {
+            background-color: #f6f8fa;
+            border: 2px dashed #d0d7de;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin: 16px 0;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .image-error {
+            color: #57606a;
+        }
+
+        .image-error-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .image-error-text {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .image-error-alt {
+            font-size: 12px;
+            font-family: monospace;
+            margin-top: 4px;
+            word-break: break-word;
+        }
+
+        .image-error-src {
+            font-size: 11px;
+            font-family: monospace;
+            color: #8b949e;
+            margin-top: 4px;
+            word-break: break-all;
+            max-width: 300px;
+        }
+
         /* Dark mode support */
         @media (prefers-color-scheme: dark) {
             body {
@@ -155,6 +197,19 @@
                 background-color: #2d1f1f;
                 border-color: #6e3030;
                 color: #f85149;
+            }
+
+            .image-placeholder {
+                background-color: #161b22;
+                border-color: #30363d;
+            }
+
+            .image-error {
+                color: #8b949e;
+            }
+
+            .image-error-src {
+                color: #6e7681;
             }
         }
     </style>
@@ -208,6 +263,79 @@
             return div.innerHTML;
         }
 
+        // Truncate URL for display
+        function truncateUrl(url, maxLength) {
+            if (url.length <= maxLength) return url;
+            return url.substring(0, maxLength - 3) + '...';
+        }
+
+        // Handle image load errors - show placeholder with alt text
+        function handleImageError(img) {
+            const alt = img.alt || 'Image';
+            const src = img.getAttribute('data-original-src') || img.src;
+
+            const placeholder = document.createElement('div');
+            placeholder.className = 'image-placeholder';
+            placeholder.innerHTML = `
+                <div class="image-error">
+                    <div class="image-error-icon">&#128444;</div>
+                    <div class="image-error-text">Image failed to load</div>
+                    <div class="image-error-alt">${escapeHtml(alt)}</div>
+                    <div class="image-error-src" title="${escapeHtml(src)}">${escapeHtml(truncateUrl(src, 50))}</div>
+                </div>
+            `;
+
+            img.parentNode.replaceChild(placeholder, img);
+        }
+
+        // Resolve relative path against base directory
+        function resolveRelativePath(baseDir, relativePath) {
+            // Handle absolute paths (starts with /)
+            if (relativePath.startsWith('/')) {
+                return relativePath;
+            }
+
+            const baseParts = baseDir.split('/').filter(p => p !== '');
+            const pathParts = relativePath.split('/');
+
+            for (const part of pathParts) {
+                if (part === '..') {
+                    baseParts.pop();
+                } else if (part !== '.' && part !== '') {
+                    baseParts.push(part);
+                }
+            }
+
+            return '/' + baseParts.join('/');
+        }
+
+        // Create custom image renderer for marked
+        function createImageRenderer(fileDir) {
+            return {
+                image(token) {
+                    let src = token.href;
+                    const alt = escapeHtml(token.text || '');
+                    const title = token.title ? ` title="${escapeHtml(token.title)}"` : '';
+
+                    // Keep track of original src for error display
+                    const originalSrc = src;
+
+                    // Check if it's a data URL (base64) or remote URL
+                    const isDataUrl = src.startsWith('data:');
+                    const isRemoteUrl = src.startsWith('http://') || src.startsWith('https://');
+
+                    // Resolve local relative paths
+                    if (!isDataUrl && !isRemoteUrl && fileDir) {
+                        const resolvedPath = resolveRelativePath(fileDir, src);
+                        // Use Tauri's convertFileSrc for local files
+                        src = window.__TAURI__.tauri.convertFileSrc(resolvedPath);
+                    }
+
+                    return `<img src="${src}" alt="${alt}"${title} data-original-src="${escapeHtml(originalSrc)}" onerror="handleImageError(this)" style="max-width:100%;height:auto;">`;
+                }
+            };
+        }
+
         // Apply syntax highlighting and copy buttons to code blocks
         function highlightCodeBlocks() {
             const codeBlocks = document.querySelectorAll('pre code');
@@ -258,6 +386,9 @@
                     gfm: true,
                     breaks: true
                 });
+
+                // Use custom image renderer to handle local paths and error fallbacks
+                marked.use({ renderer: createImageRenderer(data.file_dir) });
 
                 // Render markdown to HTML
                 const html = marked.parse(data.content);
