@@ -50,7 +50,7 @@
     </article>
 
     <script>
-        async function init() {
+        async function loadContent() {
             const contentEl = document.getElementById('content');
 
             try {
@@ -68,10 +68,39 @@
                 const html = marked.parse(data.content);
                 contentEl.innerHTML = html;
 
+                return true;
             } catch (error) {
                 console.error('Failed to load markdown:', error);
                 contentEl.innerHTML = '<div class="error">Failed to load markdown content</div>';
+                return false;
             }
+        }
+
+        async function reloadWithScrollPreserve() {
+            // Save current scroll position
+            const scrollX = window.scrollX;
+            const scrollY = window.scrollY;
+
+            // Reload content
+            const success = await loadContent();
+
+            if (success) {
+                // Restore scroll position after content is rendered
+                requestAnimationFrame(() => {
+                    window.scrollTo(scrollX, scrollY);
+                });
+            }
+        }
+
+        async function init() {
+            // Initial load
+            await loadContent();
+
+            // Listen for file change events from backend
+            const { listen } = window.__TAURI__.event;
+            await listen('file-changed', () => {
+                reloadWithScrollPreserve();
+            });
         }
 
         // Initialize when DOM is ready
