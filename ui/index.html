@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="hljs-github-dark.min.css" media="(prefers-color-scheme: dark)">
     <script src="marked.min.js"></script>
     <script src="highlight.min.js"></script>
-    <script src="mermaid.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -164,38 +163,6 @@
             border-color: #1a7f37;
         }
 
-        /* Mermaid diagram container */
-        .mermaid-container {
-            margin: 16px 0;
-            text-align: center;
-        }
-
-        .mermaid-container svg {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* Mermaid error styling */
-        .mermaid-error {
-            background-color: #fff8f8;
-            border: 1px solid #f5c6cb;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            color: #721c24;
-            font-family: monospace;
-            font-size: 14px;
-            text-align: left;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .mermaid-error-title {
-            font-weight: 600;
-            margin-bottom: 8px;
-            display: block;
-        }
-
         /* Image error placeholder */
         .image-placeholder {
             background-color: #f6f8fa;
@@ -270,12 +237,6 @@
             .code-block-wrapper .copy-button.copied {
                 color: #3fb950;
                 border-color: #3fb950;
-            }
-
-            .mermaid-error {
-                background-color: #2d1f1f;
-                border-color: #6e3030;
-                color: #f85149;
             }
 
             .image-placeholder {
@@ -586,42 +547,6 @@
             }, 1500);
         }
 
-        // Initialize Mermaid with theme based on system preference
-        function initMermaid() {
-            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            mermaid.initialize({
-                startOnLoad: false,
-                theme: isDark ? 'dark' : 'default',
-                securityLevel: 'strict'
-            });
-        }
-
-        // Render Mermaid diagrams from code blocks
-        async function renderMermaidDiagrams() {
-            const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
-
-            for (const block of codeBlocks) {
-                const pre = block.parentElement;
-                const code = block.textContent;
-                const container = document.createElement('div');
-                container.className = 'mermaid-container';
-
-                try {
-                    // Generate unique ID for each diagram
-                    const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
-                    const { svg } = await mermaid.render(id, code);
-                    container.innerHTML = svg;
-                } catch (error) {
-                    // Show inline error message for failed diagrams
-                    container.className = 'mermaid-error';
-                    container.innerHTML = '<span class="mermaid-error-title">Mermaid Diagram Error</span>' +
-                        escapeHtml(error.message || String(error));
-                }
-
-                pre.parentNode.replaceChild(container, pre);
-            }
-        }
-
         // Helper to escape HTML for error messages
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -829,9 +754,6 @@
             contentEl.appendChild(toc);
             contentEl.appendChild(sectionsContainer);
 
-            // Render Mermaid diagrams in all sections
-            await renderMermaidDiagrams();
-
             // Apply syntax highlighting
             highlightCodeBlocks();
         }
@@ -883,10 +805,7 @@
                 const html = marked.parse(data.content);
                 contentEl.innerHTML = html;
 
-                // Render Mermaid diagrams first (before highlighting removes them)
-                await renderMermaidDiagrams();
-
-                // Apply syntax highlighting to remaining code blocks
+                // Apply syntax highlighting to code blocks
                 highlightCodeBlocks();
 
                 return true;
@@ -1018,9 +937,6 @@
         }
 
         async function init() {
-            // Initialize Mermaid with correct theme
-            initMermaid();
-
             // Initial load
             await loadContent();
 
@@ -1041,9 +957,8 @@
                 reloadWithScrollPreserve();
             });
 
-            // Re-render diagrams when color scheme changes
+            // Re-render when color scheme changes
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                initMermaid();
                 reloadWithScrollPreserve();
             });
         }
