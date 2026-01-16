@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use directories::ProjectDirs;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::env;
 use std::fs;
@@ -11,6 +12,50 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
+
+/// Window state for persistence
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct WindowState {
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+}
+
+impl Default for WindowState {
+    fn default() -> Self {
+        Self {
+            x: 100,
+            y: 100,
+            width: 900,
+            height: 700,
+        }
+    }
+}
+
+impl WindowState {
+    fn config_path() -> Option<PathBuf> {
+        ProjectDirs::from("com", "glance", "glance").map(|dirs| dirs.config_dir().join("window.json"))
+    }
+
+    fn load() -> Self {
+        Self::config_path()
+            .and_then(|path| fs::read_to_string(&path).ok())
+            .and_then(|content| serde_json::from_str(&content).ok())
+            .unwrap_or_default()
+    }
+
+    fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(path) = Self::config_path() {
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let content = serde_json::to_string_pretty(self)?;
+            fs::write(&path, content)?;
+        }
+        Ok(())
+    }
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -195,6 +240,9 @@ fn run_app(file_path: String, file_name: String, content: String) {
 
     let watcher_control_for_setup = watcher_control.clone();
 
+    // Load saved window state
+    let saved_state = WindowState::load();
+
     tauri::Builder::default()
         .manage(AppState {
             content: content.clone(),
@@ -204,9 +252,13 @@ fn run_app(file_path: String, file_name: String, content: String) {
         })
         .invoke_handler(tauri::generate_handler![get_markdown_content, open_dropped_file])
         .setup(move |app| {
-            // Update window title with file name
+            // Update window title and restore saved position/size
             if let Some(window) = app.get_window("main") {
                 let _ = window.set_title(&window_title);
+
+                // Restore saved window position and size
+                let _ = window.set_position(tauri::PhysicalPosition::new(saved_state.x, saved_state.y));
+                let _ = window.set_size(tauri::PhysicalSize::new(saved_state.width, saved_state.height));
             }
 
             // Set up file watcher with path switching support
@@ -296,6 +348,22 @@ fn run_app(file_path: String, file_name: String, content: String) {
             });
 
             Ok(())
+        })
+        .on_window_event(|event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event.event() {
+                // Save window state before closing
+                if let Ok(position) = event.window().outer_position() {
+                    if let Ok(size) = event.window().outer_size() {
+                        let state = WindowState {
+                            x: position.x,
+                            y: position.y,
+                            width: size.width,
+                            height: size.height,
+                        };
+                        let _ = state.save();
+                    }
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
