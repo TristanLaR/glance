@@ -1,0 +1,18 @@
+# Rust build artifacts
+/src-tauri/target/
+**/*.rs.bk
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ralph TUI (project management tool)
+.ralph-tui/
+
+# Test files
+test.md

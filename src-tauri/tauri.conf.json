@@ -1,0 +1,34 @@
+{
+  "build": {
+    "distDir": "../ui",
+    "devPath": "../ui",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "package": {
+    "productName": "glance",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false
+    },
+    "bundle": {
+      "active": false,
+      "identifier": "com.glance.app",
+      "icon": []
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Glance",
+        "width": 900,
+        "height": 700
+      }
+    ]
+  }
+}
