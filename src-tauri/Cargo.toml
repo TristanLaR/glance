@@ -15,6 +15,10 @@ directories = "5"
 [build-dependencies]
 tauri-build = { version = "1.5", features = [] }
 
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
 [profile.release]
 strip = true
 lto = true

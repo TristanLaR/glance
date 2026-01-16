@@ -129,6 +129,15 @@ fn main() {
         Some(path) => {
             let file_path = PathBuf::from(path);
 
+            // Convert relative path to absolute using current working directory
+            let file_path = if file_path.is_relative() {
+                env::current_dir()
+                    .map(|cwd| cwd.join(&file_path))
+                    .unwrap_or(file_path)
+            } else {
+                file_path
+            };
+
             // Check if file exists
             if !file_path.exists() {
                 eprintln!("Error: File not found: {}", file_path.display());
