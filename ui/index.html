@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glance</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/common.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -42,6 +45,44 @@
             height: 100vh;
             color: #656d76;
         }
+
+        /* Code block container for copy button */
+        .code-block-wrapper {
+            position: relative;
+        }
+
+        .code-block-wrapper .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #57606a;
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease-in-out;
+        }
+
+        .code-block-wrapper:hover .copy-button {
+            opacity: 1;
+        }
+
+        .code-block-wrapper .copy-button:hover {
+            background-color: #f3f4f6;
+            border-color: #c5cbd1;
+        }
+
+        .code-block-wrapper .copy-button:active {
+            background-color: #ebecef;
+        }
+
+        .code-block-wrapper .copy-button.copied {
+            color: #1a7f37;
+            border-color: #1a7f37;
+        }
     </style>
 </head>
 <body>
@@ -50,6 +91,43 @@
     </article>
 
     <script>
+        // Apply syntax highlighting and copy buttons to code blocks
+        function highlightCodeBlocks() {
+            const codeBlocks = document.querySelectorAll('pre code');
+            codeBlocks.forEach((block) => {
+                // Apply syntax highlighting (auto-detects language or uses fence-specified)
+                hljs.highlightElement(block);
+
+                // Wrap pre element for copy button positioning
+                const pre = block.parentElement;
+                if (!pre.parentElement.classList.contains('code-block-wrapper')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'code-block-wrapper';
+                    pre.parentNode.insertBefore(wrapper, pre);
+                    wrapper.appendChild(pre);
+
+                    // Add copy button
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-button';
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.addEventListener('click', async () => {
+                        try {
+                            await navigator.clipboard.writeText(block.textContent);
+                            copyBtn.textContent = 'Copied!';
+                            copyBtn.classList.add('copied');
+                            setTimeout(() => {
+                                copyBtn.textContent = 'Copy';
+                                copyBtn.classList.remove('copied');
+                            }, 2000);
+                        } catch (err) {
+                            console.error('Failed to copy:', err);
+                        }
+                    });
+                    wrapper.appendChild(copyBtn);
+                }
+            });
+        }
+
         async function loadContent() {
             const contentEl = document.getElementById('content');
 
@@ -67,6 +145,9 @@
                 // Render markdown to HTML
                 const html = marked.parse(data.content);
                 contentEl.innerHTML = html;
+
+                // Apply syntax highlighting to code blocks
+                highlightCodeBlocks();
 
                 return true;
             } catch (error) {
