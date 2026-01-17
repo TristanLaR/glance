@@ -1,18 +1,19 @@
 # Glance
 
-A minimal, blazingly fast markdown viewer for macOS. Open markdown files from the command line and view them beautifully.
+A minimal, blazingly fast markdown viewer. Open markdown files from the command line and view them beautifully.
+
+**Supported:** macOS, Linux | **Not supported:** Windows
 
 ## Features
 
-- **Instant startup** - Opens markdown files in milliseconds
-- **Daemon mode** - Reuses a running instance for 12x faster file loading (0.24s vs 3s)
+- **Instant file opens** - Sequential files load in ~0.2s (vs 3s cold start)
 - **Code highlighting** - Syntax highlighting for 100+ languages (lazy-loaded)
-- **Diagram support** - Render Mermaid diagrams (optional branch)
-- **File watching** - Auto-reloads when the markdown file changes
+- **Live reloading** - Auto-updates when the file changes
 - **Dark mode** - Follows your system theme preference
-- **Large file handling** - Accordion sections for files over 500KB
-- **Drag & drop** - Drag files into the window to open them
-- **Window state** - Remembers your window position and size
+- **Large files** - Accordion sections for files over 500KB
+- **Drag & drop** - Open files by dragging into the window
+- **Window state** - Remembers position and size
+- **Diagram support** - Render Mermaid diagrams (optional branch)
 
 ## Usage
 
