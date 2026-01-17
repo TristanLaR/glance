@@ -5,6 +5,8 @@ use directories::ProjectDirs;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::env;
 use std::fs;
+use std::io::{Read, Write};
+use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::PathBuf;
 use std::process;
 use std::sync::mpsc::{channel, Sender};
@@ -15,6 +17,17 @@ use tauri::Manager;
 
 /// Threshold for large file mode (500KB)
 const LARGE_FILE_THRESHOLD: u64 = 500 * 1024;
+
+/// Get the path to the IPC socket for daemon mode
+fn get_socket_path() -> Option<PathBuf> {
+    ProjectDirs::from("com", "glance", "glance")
+        .and_then(|dirs| {
+            // Try runtime_dir first, fall back to cache_dir
+            dirs.runtime_dir()
+                .map(|dir| dir.join("glance.sock"))
+                .or_else(|| Some(dirs.cache_dir().join("glance.sock")))
+        })
+}
 
 /// Window state for persistence
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -144,6 +157,17 @@ fn main() {
                 process::exit(1);
             }
 
+            // Try to send to running daemon first
+            let absolute_path = fs::canonicalize(&file_path).unwrap_or_else(|_| file_path.clone());
+            if send_to_daemon(absolute_path.to_string_lossy().as_ref()) {
+                // Daemon is running and received the file - show window via macOS open command
+                let _ = std::process::Command::new("open")
+                    .arg("-a")
+                    .arg("glance")
+                    .spawn();
+                process::exit(0);
+            }
+
             // Get file size
             let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
 
@@ -200,6 +224,105 @@ fn print_help() {
     println!("    --help, -h       Show this help message");
     println!("    --version, -v    Show version");
     println!("    --no-truncate    Render entire file regardless of size");
+}
+
+/// Try to send a file path to the running daemon
+/// Returns true if successful (daemon is running), false otherwise
+fn send_to_daemon(file_path: &str) -> bool {
+    if let Some(socket_path) = get_socket_path() {
+        if let Ok(mut stream) = UnixStream::connect(&socket_path) {
+            if let Ok(_) = stream.write_all(file_path.as_bytes()) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Start a Unix socket server that listens for file paths from other glance instances
+fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
+    if let Some(socket_path) = get_socket_path() {
+        // Remove old socket file if it exists
+        let _ = fs::remove_file(&socket_path);
+
+        // Create parent directories if needed
+        if let Some(parent) = socket_path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+
+        thread::spawn(move || {
+            if let Ok(listener) = UnixListener::bind(&socket_path) {
+                for stream in listener.incoming() {
+                    if let Ok(mut stream) = stream {
+                        let state = state.clone();
+                        let app_handle = app_handle.clone();
+
+                        // Read file path from socket
+                        let mut buffer = [0u8; 4096];
+                        if let Ok(n) = stream.read(&mut buffer) {
+                            let file_path_str = String::from_utf8_lossy(&buffer[..n]).to_string();
+                            let file_path = PathBuf::from(&file_path_str);
+
+                            // Validate file exists
+                            if !file_path.exists() {
+                                continue;
+                            }
+
+                            // Read file content
+                            if let Ok(new_content) = fs::read_to_string(&file_path) {
+                                if new_content.trim().is_empty() {
+                                    continue;
+                                }
+
+                                // Get file metadata
+                                let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
+                                let no_truncate = *state.no_truncate.lock().unwrap();
+                                let is_large_file = file_size > LARGE_FILE_THRESHOLD && !no_truncate;
+
+                                let new_file_name = file_path
+                                    .file_name()
+                                    .map(|n| n.to_string_lossy().to_string())
+                                    .unwrap_or_else(|| "Glance".to_string());
+
+                                // Update state
+                                {
+                                    let mut content = state.content.lock().unwrap();
+                                    *content = new_content;
+                                }
+                                {
+                                    let mut fp = state.file_path.lock().unwrap();
+                                    *fp = file_path.to_string_lossy().to_string();
+                                }
+                                {
+                                    let mut fn_state = state.file_name.lock().unwrap();
+                                    *fn_state = new_file_name.clone();
+                                }
+                                {
+                                    let mut lf = state.is_large_file.lock().unwrap();
+                                    *lf = is_large_file;
+                                }
+
+                                // Emit event to frontend and show window
+                                if let Some(window) = app_handle.get_window("main") {
+                                    let window_title = format!("{} - Glance", new_file_name);
+                                    let _ = window.set_title(&window_title);
+                                    // Make sure window is visible
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                    let _ = window.emit("file-loaded", ());
+                                }
+
+                                // Tell watcher about new file
+                                if let Some(ref sender) = *state.watcher_control.lock().unwrap() {
+                                    let _ = sender.send(file_path);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 }
 
 #[tauri::command]
@@ -440,12 +563,20 @@ fn run_app(
     // Load saved window state
     let saved_state = WindowState::load();
 
+    // Create clones for socket server thread
+    let content_for_socket = content.clone();
+    let file_path_for_socket = file_path_state.clone();
+    let file_name_for_socket = file_name_state.clone();
+    let is_large_file_for_socket = is_large_file_state.clone();
+    let no_truncate_for_socket = no_truncate_state.clone();
+    let watcher_control_for_socket = watcher_control.clone();
+
     tauri::Builder::default()
         .manage(AppState {
             content: content.clone(),
             file_path: file_path_state.clone(),
             file_name: file_name_state.clone(),
-            watcher_control,
+            watcher_control: watcher_control.clone(),
             is_large_file: is_large_file_state.clone(),
             no_truncate: no_truncate_state.clone(),
         })
@@ -454,6 +585,17 @@ fn run_app(
             open_dropped_file
         ])
         .setup(move |app| {
+            // Start the socket server for daemon mode
+            let app_handle = app.handle();
+            let socket_app_state = AppState {
+                content: content_for_socket.clone(),
+                file_path: file_path_for_socket.clone(),
+                file_name: file_name_for_socket.clone(),
+                watcher_control: watcher_control_for_socket.clone(),
+                is_large_file: is_large_file_for_socket.clone(),
+                no_truncate: no_truncate_for_socket.clone(),
+            };
+            start_socket_server(Arc::new(socket_app_state), app_handle);
             // Update window title and restore saved position/size
             if let Some(window) = app.get_window("main") {
                 let _ = window.set_title(&window_title);
@@ -565,19 +707,26 @@ fn run_app(
             Ok(())
         })
         .on_window_event(|event| {
-            if let tauri::WindowEvent::CloseRequested { .. } = event.event() {
-                // Save window state before closing
-                if let Ok(position) = event.window().outer_position() {
-                    if let Ok(size) = event.window().outer_size() {
-                        let state = WindowState {
-                            x: position.x,
-                            y: position.y,
-                            width: size.width,
-                            height: size.height,
-                        };
-                        let _ = state.save();
+            match event.event() {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    // Save window state before closing
+                    if let Ok(position) = event.window().outer_position() {
+                        if let Ok(size) = event.window().outer_size() {
+                            let state = WindowState {
+                                x: position.x,
+                                y: position.y,
+                                width: size.width,
+                                height: size.height,
+                            };
+                            let _ = state.save();
+                        }
                     }
+                    // Hide window instead of closing (daemon mode)
+                    let _ = event.window().hide();
+                    // Prevent the default close behavior
+                    api.prevent_close();
                 }
+                _ => {}
             }
         })
         .run(tauri::generate_context!())
