@@ -33,10 +33,26 @@ Build from source:
 cargo tauri build
 ```
 
-Then add to your PATH:
+### macOS
 
 ```bash
-ln -s /path/to/glance.app/Contents/MacOS/glance ~/bin/glance
+# Copy the launcher script
+cp scripts/glance-macos.sh ~/bin/glance
+chmod +x ~/bin/glance
+
+# Edit ~/bin/glance to set your APP path, then add ~/bin to PATH
+export PATH="$HOME/bin:$PATH"
+```
+
+### Linux
+
+```bash
+# Copy the launcher script
+cp scripts/glance-linux.sh ~/bin/glance
+chmod +x ~/bin/glance
+
+# Edit ~/bin/glance to set your binary path, then add ~/bin to PATH
+export PATH="$HOME/bin:$PATH"
 ```
 
 ## Development
