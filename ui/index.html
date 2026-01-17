@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hljs-github.min.css">
     <link rel="stylesheet" href="hljs-github-dark.min.css" media="(prefers-color-scheme: dark)">
     <script src="marked.min.js"></script>
-    <script src="highlight.min.js"></script>
+    <!-- highlight.min.js is lazy-loaded only when code blocks are detected -->
     <style>
         * {
             margin: 0;
@@ -628,8 +628,44 @@
         }
 
         // Apply syntax highlighting and copy buttons to code blocks
-        function highlightCodeBlocks() {
+        // Highlight.js lazy-loading state
+        let hljsLoaded = false;
+        let hljsLoading = null;
+
+        // Lazy-load highlight.js only when needed
+        function loadHighlightJs() {
+            if (hljsLoaded) return Promise.resolve();
+            if (hljsLoading) return hljsLoading;
+
+            hljsLoading = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'highlight.min.js';
+                script.onload = () => {
+                    hljsLoaded = true;
+                    resolve();
+                };
+                script.onerror = () => reject(new Error('Failed to load highlight.js'));
+                document.head.appendChild(script);
+            });
+
+            return hljsLoading;
+        }
+
+        // Apply syntax highlighting to code blocks (lazy-loads highlight.js if needed)
+        async function highlightCodeBlocks() {
             const codeBlocks = document.querySelectorAll('pre code');
+
+            // Skip if no code blocks found
+            if (codeBlocks.length === 0) return;
+
+            // Lazy-load highlight.js if not already loaded
+            try {
+                await loadHighlightJs();
+            } catch (error) {
+                console.error('Failed to load highlight.js:', error);
+                return; // Code blocks will just show without highlighting
+            }
+
             codeBlocks.forEach((block) => {
                 // Apply syntax highlighting (auto-detects language or uses fence-specified)
                 hljs.highlightElement(block);
