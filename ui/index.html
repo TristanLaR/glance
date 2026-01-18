@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="hljs-github.min.css">
     <link rel="stylesheet" href="hljs-github-dark.min.css" media="(prefers-color-scheme: dark)">
     <script src="marked.min.js"></script>
+    <script src="purify.min.js"></script>
     <!-- highlight.min.js is lazy-loaded only when code blocks are detected -->
     <style>
         * {
@@ -775,7 +776,13 @@
 
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'section-content markdown-body';
-                contentDiv.innerHTML = marked.parse(section.content);
+                // Sanitize HTML to prevent XSS
+                contentDiv.innerHTML = DOMPurify.sanitize(marked.parse(section.content), {
+                    USE_PROFILES: { html: true },
+                    ADD_ATTR: ['onerror', 'data-original-src'],
+                    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
+                    FORBID_ATTR: ['onclick', 'onload', 'onmouseover', 'onfocus', 'onblur']
+                });
 
                 accordion.appendChild(summary);
                 accordion.appendChild(contentDiv);
@@ -837,9 +844,14 @@
                 // Use custom image renderer to handle local paths and error fallbacks
                 marked.use({ renderer: createImageRenderer(data.file_dir) });
 
-                // Render markdown to HTML
+                // Render markdown to HTML with XSS sanitization
                 const html = marked.parse(data.content);
-                contentEl.innerHTML = html;
+                contentEl.innerHTML = DOMPurify.sanitize(html, {
+                    USE_PROFILES: { html: true },
+                    ADD_ATTR: ['onerror', 'data-original-src'], // Allow our image error handler
+                    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
+                    FORBID_ATTR: ['onclick', 'onload', 'onmouseover', 'onfocus', 'onblur']
+                });
 
                 // Apply syntax highlighting to code blocks
                 highlightCodeBlocks();

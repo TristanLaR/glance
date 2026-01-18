@@ -263,10 +263,34 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
                             let file_path_str = String::from_utf8_lossy(&buffer[..n]).to_string();
                             let file_path = PathBuf::from(&file_path_str);
 
-                            // Validate file exists
+                            // Security: Validate file exists
                             if !file_path.exists() {
+                                eprintln!("Socket: File not found: {}", file_path.display());
                                 continue;
                             }
+
+                            // Security: Validate it's a markdown file (prevent arbitrary file access)
+                            let extension = file_path
+                                .extension()
+                                .map(|e| e.to_string_lossy().to_lowercase());
+                            if extension.as_deref() != Some("md")
+                                && extension.as_deref() != Some("markdown")
+                            {
+                                eprintln!(
+                                    "Socket: Invalid file type (only .md/.markdown allowed): {}",
+                                    file_path.display()
+                                );
+                                continue;
+                            }
+
+                            // Security: Canonicalize path to prevent path traversal
+                            let file_path = match fs::canonicalize(&file_path) {
+                                Ok(p) => p,
+                                Err(e) => {
+                                    eprintln!("Socket: Failed to canonicalize path: {}", e);
+                                    continue;
+                                }
+                            };
 
                             // Read file content
                             if let Ok(new_content) = fs::read_to_string(&file_path) {
@@ -276,7 +300,7 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
 
                                 // Get file metadata
                                 let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
-                                let no_truncate = *state.no_truncate.lock().unwrap();
+                                let no_truncate = *state.no_truncate.lock().unwrap_or_else(|e| e.into_inner());
                                 let is_large_file = file_size > LARGE_FILE_THRESHOLD && !no_truncate;
 
                                 let new_file_name = file_path
@@ -284,36 +308,44 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
                                     .map(|n| n.to_string_lossy().to_string())
                                     .unwrap_or_else(|| "Glance".to_string());
 
-                                // Update state
+                                // Update state (handle poisoned locks gracefully)
                                 {
-                                    let mut content = state.content.lock().unwrap();
+                                    let mut content = state.content.lock().unwrap_or_else(|e| e.into_inner());
                                     *content = new_content;
                                 }
                                 {
-                                    let mut fp = state.file_path.lock().unwrap();
+                                    let mut fp = state.file_path.lock().unwrap_or_else(|e| e.into_inner());
                                     *fp = file_path.to_string_lossy().to_string();
                                 }
                                 {
-                                    let mut fn_state = state.file_name.lock().unwrap();
+                                    let mut fn_state = state.file_name.lock().unwrap_or_else(|e| e.into_inner());
                                     *fn_state = new_file_name.clone();
                                 }
                                 {
-                                    let mut lf = state.is_large_file.lock().unwrap();
+                                    let mut lf = state.is_large_file.lock().unwrap_or_else(|e| e.into_inner());
                                     *lf = is_large_file;
                                 }
 
                                 // Emit event to frontend and show window
                                 if let Some(window) = app_handle.get_window("main") {
                                     let window_title = format!("{} - Glance", new_file_name);
-                                    let _ = window.set_title(&window_title);
+                                    if let Err(e) = window.set_title(&window_title) {
+                                        eprintln!("Failed to set window title: {}", e);
+                                    }
                                     // Make sure window is visible
-                                    let _ = window.show();
-                                    let _ = window.set_focus();
-                                    let _ = window.emit("file-loaded", ());
+                                    if let Err(e) = window.show() {
+                                        eprintln!("Failed to show window: {}", e);
+                                    }
+                                    if let Err(e) = window.set_focus() {
+                                        eprintln!("Failed to focus window: {}", e);
+                                    }
+                                    if let Err(e) = window.emit("file-loaded", ()) {
+                                        eprintln!("Failed to emit file-loaded event: {}", e);
+                                    }
                                 }
 
                                 // Tell watcher about new file
-                                if let Some(ref sender) = *state.watcher_control.lock().unwrap() {
+                                if let Some(ref sender) = *state.watcher_control.lock().unwrap_or_else(|e| e.into_inner()) {
                                     let _ = sender.send(file_path);
                                 }
                             }
@@ -327,10 +359,11 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
 
 #[tauri::command]
 fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
-    let content = state.content.lock().unwrap();
-    let file_path = state.file_path.lock().unwrap();
-    let file_name = state.file_name.lock().unwrap();
-    let is_large_file = *state.is_large_file.lock().unwrap();
+    // Use unwrap_or_else to handle poisoned locks gracefully
+    let content = state.content.lock().unwrap_or_else(|e| e.into_inner());
+    let file_path = state.file_path.lock().unwrap_or_else(|e| e.into_inner());
+    let file_name = state.file_name.lock().unwrap_or_else(|e| e.into_inner());
+    let is_large_file = *state.is_large_file.lock().unwrap_or_else(|e| e.into_inner());
 
     // Get directory of the markdown file for resolving relative image paths
     let file_dir = PathBuf::from(file_path.as_str())
@@ -395,24 +428,24 @@ fn open_dropped_file(
         .unwrap_or_else(|| "Glance".to_string());
 
     // Check if no_truncate is set
-    let no_truncate = *state.no_truncate.lock().unwrap();
+    let no_truncate = *state.no_truncate.lock().unwrap_or_else(|e| e.into_inner());
     let is_large_file = file_size > LARGE_FILE_THRESHOLD && !no_truncate;
 
-    // Update state
+    // Update state (handle poisoned locks gracefully)
     {
-        let mut content = state.content.lock().unwrap();
+        let mut content = state.content.lock().unwrap_or_else(|e| e.into_inner());
         *content = new_content;
     }
     {
-        let mut file_path_state = state.file_path.lock().unwrap();
+        let mut file_path_state = state.file_path.lock().unwrap_or_else(|e| e.into_inner());
         *file_path_state = absolute_path.to_string_lossy().to_string();
     }
     {
-        let mut file_name_state = state.file_name.lock().unwrap();
+        let mut file_name_state = state.file_name.lock().unwrap_or_else(|e| e.into_inner());
         *file_name_state = new_file_name.clone();
     }
     {
-        let mut large_file_state = state.is_large_file.lock().unwrap();
+        let mut large_file_state = state.is_large_file.lock().unwrap_or_else(|e| e.into_inner());
         *large_file_state = is_large_file;
     }
 
@@ -421,7 +454,7 @@ fn open_dropped_file(
     let _ = window.set_title(&window_title);
 
     // Tell watcher thread to watch new file
-    if let Some(ref sender) = *state.watcher_control.lock().unwrap() {
+    if let Some(ref sender) = *state.watcher_control.lock().unwrap_or_else(|e| e.into_inner()) {
         let _ = sender.send(absolute_path);
     }
 
@@ -619,7 +652,7 @@ fn run_app(
 
             // Store sender in state for later use
             {
-                let mut control = watcher_control_for_setup.lock().unwrap();
+                let mut control = watcher_control_for_setup.lock().unwrap_or_else(|e| e.into_inner());
                 *control = Some(path_tx);
             }
 
@@ -683,7 +716,7 @@ fn run_app(
                             thread::sleep(Duration::from_millis(50));
 
                             // Get current watched path from state
-                            let watched_path = file_path_for_watcher.lock().unwrap().clone();
+                            let watched_path = file_path_for_watcher.lock().unwrap_or_else(|e| e.into_inner()).clone();
 
                             // Read updated content
                             if let Ok(new_content) = fs::read_to_string(&watched_path) {
@@ -718,11 +751,15 @@ fn run_app(
                                 width: size.width,
                                 height: size.height,
                             };
-                            let _ = state.save();
+                            if let Err(e) = state.save() {
+                                eprintln!("Failed to save window state: {}", e);
+                            }
                         }
                     }
                     // Hide window instead of closing (daemon mode)
-                    let _ = event.window().hide();
+                    if let Err(e) = event.window().hide() {
+                        eprintln!("Failed to hide window: {}", e);
+                    }
                     // Prevent the default close behavior
                     api.prevent_close();
                 }
