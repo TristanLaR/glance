@@ -284,9 +284,11 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
                                 .map(|e| e.to_string_lossy().to_lowercase());
                             if extension.as_deref() != Some("md")
                                 && extension.as_deref() != Some("markdown")
+                                && extension.as_deref() != Some("puml")
+                                && extension.as_deref() != Some("plantuml")
                             {
                                 eprintln!(
-                                    "Socket: Invalid file type (only .md/.markdown allowed): {}",
+                                    "Socket: Invalid file type (only .md/.markdown/.puml/.plantuml allowed): {}",
                                     file_path.display()
                                 );
                                 continue;
@@ -390,6 +392,15 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
     // Load extensions config
     let config = AppConfig::load();
 
+    // Check if this is a PlantUML file
+    let is_plantuml_file = PathBuf::from(file_path.as_str())
+        .extension()
+        .map(|e| {
+            let ext = e.to_string_lossy().to_lowercase();
+            ext == "puml" || ext == "plantuml"
+        })
+        .unwrap_or(false);
+
     MarkdownContent {
         content: content.clone(),
         file_path: file_path.clone(),
@@ -398,6 +409,7 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
         is_large_file,
         sections,
         extensions: config.extensions,
+        is_plantuml_file,
     }
 }
 
@@ -418,8 +430,12 @@ fn open_dropped_file(
     let extension = file_path
         .extension()
         .map(|e| e.to_string_lossy().to_lowercase());
-    if extension.as_deref() != Some("md") && extension.as_deref() != Some("markdown") {
-        return Err("Only markdown files (.md, .markdown) are supported".to_string());
+    if extension.as_deref() != Some("md")
+        && extension.as_deref() != Some("markdown")
+        && extension.as_deref() != Some("puml")
+        && extension.as_deref() != Some("plantuml")
+    {
+        return Err("Only markdown and PlantUML files are supported".to_string());
     }
 
     // Get file size
@@ -486,6 +502,8 @@ struct MarkdownContent {
     sections: Vec<MarkdownSection>,
     /// Extension configuration
     extensions: ExtensionsConfig,
+    /// Whether this is a PlantUML file (.puml, .plantuml)
+    is_plantuml_file: bool,
 }
 
 struct AppState {
