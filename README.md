@@ -27,32 +27,16 @@ First invocation starts the daemon (~3 seconds). Subsequent invocations reuse th
 
 ## Installation
 
-Build from source:
+### macOS (Homebrew)
+
+```bash
+brew install --cask TristanLaR/tap/glance
+```
+
+### Build from source
 
 ```bash
 cargo tauri build
-```
-
-### macOS
-
-```bash
-# Copy the launcher script
-cp scripts/glance-macos.sh ~/bin/glance
-chmod +x ~/bin/glance
-
-# Edit ~/bin/glance to set your APP path, then add ~/bin to PATH
-export PATH="$HOME/bin:$PATH"
-```
-
-### Linux
-
-```bash
-# Copy the launcher script
-cp scripts/glance-linux.sh ~/bin/glance
-chmod +x ~/bin/glance
-
-# Edit ~/bin/glance to set your binary path, then add ~/bin to PATH
-export PATH="$HOME/bin:$PATH"
 ```
 
 ## Development
