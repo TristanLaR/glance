@@ -74,11 +74,20 @@ impl WindowState {
     }
 }
 
+/// Extension configuration
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+struct ExtensionsConfig {
+    #[serde(default)]
+    plantuml: bool,
+}
+
 /// Application configuration from config.toml
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 struct AppConfig {
     #[serde(default)]
     no_truncate: bool,
+    #[serde(default)]
+    extensions: ExtensionsConfig,
 }
 
 impl AppConfig {
@@ -378,6 +387,9 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
         Vec::new()
     };
 
+    // Load extensions config
+    let config = AppConfig::load();
+
     MarkdownContent {
         content: content.clone(),
         file_path: file_path.clone(),
@@ -385,6 +397,7 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
         file_dir,
         is_large_file,
         sections,
+        extensions: config.extensions,
     }
 }
 
@@ -471,6 +484,8 @@ struct MarkdownContent {
     is_large_file: bool,
     /// Sections extracted from markdown for accordion display (only when is_large_file is true)
     sections: Vec<MarkdownSection>,
+    /// Extension configuration
+    extensions: ExtensionsConfig,
 }
 
 struct AppState {

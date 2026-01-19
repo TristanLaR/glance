@@ -474,6 +474,47 @@
                 background-color: rgba(255, 255, 255, 0.1);
             }
         }
+
+        /* PlantUML diagram styles */
+        .plantuml-diagram {
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .plantuml-diagram svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .plantuml-loading {
+            padding: 24px;
+            color: #656d76;
+            background-color: #f6f8fa;
+            border: 1px dashed #d0d7de;
+            border-radius: 6px;
+        }
+
+        .plantuml-error {
+            padding: 24px;
+            color: #cf222e;
+            background-color: #ffebe9;
+            border: 1px solid #ff8182;
+            border-radius: 6px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .plantuml-loading {
+                color: #8b949e;
+                background-color: #161b22;
+                border-color: #30363d;
+            }
+
+            .plantuml-error {
+                color: #ff7b72;
+                background-color: #490202;
+                border-color: #f85149;
+            }
+        }
     </style>
 </head>
 <body>
@@ -652,6 +693,50 @@
             return hljsLoading;
         }
 
+        // PlantUML encoding for server requests
+        function encodePlantUML(text) {
+            // PlantUML uses a custom encoding: deflate + custom base64
+            // For simplicity, we'll use the hex encoding endpoint
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            let hex = '';
+            for (const byte of data) {
+                hex += byte.toString(16).padStart(2, '0');
+            }
+            return '~h' + hex;
+        }
+
+        // Render PlantUML diagrams (requires extensions.plantuml = true)
+        async function renderPlantUMLDiagrams() {
+            const codeBlocks = document.querySelectorAll('pre code.language-plantuml, pre code.language-puml');
+            if (codeBlocks.length === 0) return;
+
+            for (const block of codeBlocks) {
+                const code = block.textContent;
+                const pre = block.parentElement;
+
+                // Create placeholder while loading
+                const placeholder = document.createElement('div');
+                placeholder.className = 'plantuml-diagram';
+                placeholder.innerHTML = '<div class="plantuml-loading">Rendering diagram...</div>';
+                pre.parentNode.replaceChild(placeholder, pre);
+
+                try {
+                    const encoded = encodePlantUML(code);
+                    const response = await fetch(`https://www.plantuml.com/plantuml/svg/${encoded}`);
+                    if (response.ok) {
+                        const svg = await response.text();
+                        placeholder.innerHTML = svg;
+                    } else {
+                        placeholder.innerHTML = '<div class="plantuml-error">Failed to render diagram</div>';
+                    }
+                } catch (error) {
+                    console.error('PlantUML render error:', error);
+                    placeholder.innerHTML = '<div class="plantuml-error">Failed to render diagram</div>';
+                }
+            }
+        }
+
         // Apply syntax highlighting to code blocks (lazy-loads highlight.js if needed)
         async function highlightCodeBlocks() {
             const codeBlocks = document.querySelectorAll('pre code');
@@ -799,6 +884,11 @@
 
             // Apply syntax highlighting
             highlightCodeBlocks();
+
+            // Render PlantUML diagrams if extension is enabled
+            if (data.extensions && data.extensions.plantuml) {
+                renderPlantUMLDiagrams();
+            }
         }
 
         async function loadContent() {
@@ -855,6 +945,11 @@
 
                 // Apply syntax highlighting to code blocks
                 highlightCodeBlocks();
+
+                // Render PlantUML diagrams if extension is enabled
+                if (data.extensions && data.extensions.plantuml) {
+                    renderPlantUMLDiagrams();
+                }
 
                 return true;
             } catch (error) {
