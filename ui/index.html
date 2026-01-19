@@ -484,9 +484,12 @@
         .plantuml-diagram svg {
             max-width: 100%;
             height: auto;
-            background-color: #ffffff;
-            border-radius: 6px;
-            padding: 16px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .plantuml-diagram svg {
+                filter: invert(1) hue-rotate(180deg);
+            }
         }
 
         .plantuml-loading {
