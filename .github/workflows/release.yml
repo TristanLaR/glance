@@ -73,7 +73,8 @@ jobs:
             src-tauri/target/release/bundle/appimage/*.AppImage
 
   release:
-    needs: [build-macos, build-linux]
+    needs: [build-macos]
+    # Linux build is optional for now
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -84,16 +85,9 @@ jobs:
           name: macos-bundle
           path: macos
 
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-bundle
-          path: linux
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             macos/**/*
-            linux/**/*
           generate_release_notes: true

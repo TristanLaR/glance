@@ -1,9 +1,9 @@
 [Desktop Entry]
-Categories=Utility;TextEditor;
-Comment=A minimal markdown viewer
+Name=Glance
+Comment=Minimal markdown viewer with live preview
 Exec=glance %f
 Icon=glance
-MimeType=text/markdown;text/x-markdown;
-Name=Glance
-Terminal=false
 Type=Application
+Categories=Utility;TextEditor;
+MimeType=text/markdown;text/x-markdown;
+Terminal=false
