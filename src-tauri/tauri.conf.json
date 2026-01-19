@@ -56,7 +56,7 @@
       }
     },
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data:; connect-src 'self' ipc: tauri:"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data:; connect-src 'self' ipc: tauri: https://www.plantuml.com"
     },
     "windows": [
       {
