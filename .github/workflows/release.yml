@@ -58,20 +58,25 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Build binary
-        working-directory: src-tauri
-        run: cargo build --release
-
-      - name: Create tarball
+      - name: Install AppImage tools
         run: |
-          cd src-tauri/target/release
-          tar -czf glance-linux-x86_64.tar.gz glance
+          sudo apt-get install -y libfuse2 squashfs-tools
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli@1.6.5
+
+      - name: Build AppImage
+        working-directory: src-tauri
+        run: NO_STRIP=true cargo tauri build --bundles appimage
+
+      - name: Rename AppImage
+        run: mv src-tauri/target/release/bundle/appimage/*.AppImage src-tauri/target/release/bundle/appimage/glance-linux-x86_64.AppImage
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: src-tauri/target/release/glance-linux-x86_64.tar.gz
+          path: src-tauri/target/release/bundle/appimage/glance-linux-x86_64.AppImage
 
   release:
     needs: [build-macos, build-linux]
@@ -94,7 +99,7 @@ jobs:
         with:
           files: |
             artifacts/glance-macos.tar.gz
-            artifacts/glance-linux-x86_64.tar.gz
+            artifacts/glance-linux-x86_64.AppImage
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
