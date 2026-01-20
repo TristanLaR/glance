@@ -55,12 +55,9 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli@1.6.5
-
-      - name: Build Tauri app
+      - name: Build binary
         working-directory: src-tauri
-        run: cargo tauri build
+        run: cargo build --release
 
       - name: Create tarball
         run: |
