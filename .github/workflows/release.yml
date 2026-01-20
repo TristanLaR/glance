@@ -58,18 +58,20 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli@1.6.5
-
-      - name: Build AppImage
+      - name: Build binary
         working-directory: src-tauri
-        run: cargo tauri build --bundles appimage
+        run: cargo build --release
+
+      - name: Create tarball
+        run: |
+          cd src-tauri/target/release
+          tar -czf glance-linux-x86_64.tar.gz glance
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          path: src-tauri/target/release/glance-linux-x86_64.tar.gz
 
   release:
     needs: [build-macos, build-linux]
@@ -92,7 +94,7 @@ jobs:
         with:
           files: |
             artifacts/glance-macos.tar.gz
-            artifacts/*.AppImage
+            artifacts/glance-linux-x86_64.tar.gz
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
