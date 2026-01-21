@@ -10,6 +10,7 @@
     <script src="marked.min.js"></script>
     <script src="purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <!-- highlight.min.js is lazy-loaded only when code blocks are detected -->
     <style>
         * {
@@ -490,7 +491,24 @@
             padding: 16px;
         }
 
-        .plantuml-loading {
+        /* Mermaid diagram styles */
+        .mermaid {
+            margin: 16px 0;
+            text-align: center;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .mermaid svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .plantuml-loading,
+        .mermaid-loading {
             padding: 24px;
             color: #656d76;
             background-color: #f6f8fa;
@@ -498,7 +516,8 @@
             border-radius: 6px;
         }
 
-        .plantuml-error {
+        .plantuml-error,
+        .mermaid-error {
             padding: 24px;
             color: #cf222e;
             background-color: #ffebe9;
@@ -507,13 +526,20 @@
         }
 
         @media (prefers-color-scheme: dark) {
-            .plantuml-loading {
+            .mermaid {
+                background-color: #0d1117;
+                border: 1px solid #30363d;
+            }
+
+            .plantuml-loading,
+            .mermaid-loading {
                 color: #8b949e;
                 background-color: #161b22;
                 border-color: #30363d;
             }
 
-            .plantuml-error {
+            .plantuml-error,
+            .mermaid-error {
                 color: #ff7b72;
                 background-color: #490202;
                 border-color: #f85149;
@@ -796,6 +822,39 @@
             }
         }
 
+        // Render Mermaid diagrams
+        async function renderMermaidDiagrams() {
+            const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
+            if (codeBlocks.length === 0) return;
+
+            // Initialize mermaid with dark mode support
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default',
+                securityLevel: 'loose'
+            });
+
+            for (const block of codeBlocks) {
+                const code = block.textContent;
+                const pre = block.parentElement;
+
+                // Create container for mermaid
+                const container = document.createElement('div');
+                container.className = 'mermaid';
+                container.textContent = code;
+
+                pre.parentNode.replaceChild(container, pre);
+
+                try {
+                    await mermaid.contentLoaded();
+                    await mermaid.run();
+                } catch (error) {
+                    console.error('Mermaid render error:', error);
+                    container.innerHTML = '<div class="mermaid-error">Failed to render diagram</div>';
+                }
+            }
+        }
+
         // Apply syntax highlighting to code blocks (lazy-loads highlight.js if needed)
         async function highlightCodeBlocks() {
             const codeBlocks = document.querySelectorAll('pre code');
@@ -948,6 +1007,9 @@
             if (data.extensions && data.extensions.plantuml) {
                 renderPlantUMLDiagrams();
             }
+
+            // Render Mermaid diagrams
+            renderMermaidDiagrams();
         }
 
         async function loadContent() {
@@ -1015,6 +1077,9 @@
                 if (data.extensions && data.extensions.plantuml) {
                     renderPlantUMLDiagrams();
                 }
+
+                // Render Mermaid diagrams
+                renderMermaidDiagrams();
 
                 return true;
             } catch (error) {

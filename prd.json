@@ -1,0 +1,210 @@
+{
+  "name": "Glance — Product Requirements Document",
+  "description": "Glance is a minimal, fast markdown viewer. Open a file, see it rendered. Nothing else.",
+  "branchName": "feature/glance-product-requirements-document",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Open Markdown File via CLI",
+      "description": "Open Markdown File via CLI",
+      "acceptanceCriteria": [
+        "Running `glance file.md` opens a window with rendered markdown",
+        "Startup completes in under 200ms",
+        "Exit code 0 on success, exit code 1 with error message if file not found or empty"
+      ],
+      "priority": 1,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Hot Reload on File Changes",
+      "description": "Hot Reload on File Changes",
+      "acceptanceCriteria": [
+        "File changes detected via filesystem watcher",
+        "Re-render triggered automatically on save",
+        "Scroll position preserved after reload"
+      ],
+      "priority": 2,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "View Syntax-Highlighted Code Blocks",
+      "description": "View Syntax-Highlighted Code Blocks",
+      "acceptanceCriteria": [
+        "Code blocks rendered with highlight.js",
+        "Language auto-detected or specified via fence (```js, ```python, etc.)",
+        "Copy button appears on hover"
+      ],
+      "priority": 3,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "View Mermaid Diagrams",
+      "description": "View Mermaid Diagrams",
+      "acceptanceCriteria": [
+        "Mermaid code blocks render as SVG diagrams",
+        "Failed diagrams show inline error message",
+        "Diagrams respect dark/light mode"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Drag and Drop File",
+      "description": "Drag and Drop File",
+      "acceptanceCriteria": [
+        "Dropping .md file opens it in current window",
+        "Window title updates to new filename",
+        "Previous file's watch is stopped, new file is watched"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Open File via System Dialog",
+      "description": "Open File via System Dialog",
+      "acceptanceCriteria": [
+        "Cmd+O (Ctrl+O on Windows/Linux) opens native file picker",
+        "Filter shows .md files by default",
+        "Selected file opens in current window"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "View Images in Markdown",
+      "description": "View Images in Markdown",
+      "acceptanceCriteria": [
+        "Local relative paths resolved from markdown file location",
+        "Remote URLs fetched and displayed",
+        "Base64 embedded images rendered",
+        "Broken images show alt text or placeholder"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Follow System Theme",
+      "description": "Follow System Theme",
+      "acceptanceCriteria": [
+        "Detects system theme preference on launch",
+        "Responds to system theme changes in real-time",
+        "GitHub-style markdown CSS adapts to theme"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Zoom Content",
+      "description": "Zoom Content",
+      "acceptanceCriteria": [
+        "Cmd+Plus zooms in, Cmd+Minus zooms out, Cmd+0 resets",
+        "Zoom level persists for session",
+        "Content remains readable at all zoom levels"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "Remember Window State",
+      "description": "Remember Window State",
+      "acceptanceCriteria": [
+        "Window size and position saved on close",
+        "Restored on next launch",
+        "Falls back to sensible defaults if no saved state"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "Handle Large Files Gracefully",
+      "description": "Handle Large Files Gracefully",
+      "acceptanceCriteria": [
+        "Files over 500KB show outline/TOC by default",
+        "Sections expandable inline (accordion style)",
+        "Multiple sections can be open simultaneously",
+        "`--no-truncate` flag renders entire file",
+        "Config file option: `no_truncate = true`"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-012",
+      "title": "Associate with OS File Handler",
+      "description": "Associate with OS File Handler",
+      "acceptanceCriteria": [
+        "App registers as handler for .md files",
+        "Double-click .md file opens in Glance (if set as default)",
+        "Works on macOS, Windows, and Linux"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-013",
+      "title": "Copy Code from Code Blocks",
+      "description": "Copy Code from Code Blocks",
+      "acceptanceCriteria": [
+        "Copy button appears on hover over code blocks",
+        "Click copies code content to clipboard",
+        "Visual feedback confirms copy action"
+      ],
+      "priority": 4,
+      "passes": true,
+      "labels": [],
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-01-16T02:45:30.653Z",
+    "version": "1.0.0",
+    "updatedAt": "2026-01-16T16:37:01.960Z"
+  }
+}
