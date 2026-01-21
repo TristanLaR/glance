@@ -4,10 +4,8 @@ A beautiful, lightning-fast markdown viewer built with Rust. Preview your markdo
 
 ## Installation
 
-### macOS & Linux
-
 ```bash
-brew install TristanLaR/tap/glance
+curl -fsSL https://raw.githubusercontent.com/TristanLaR/glance/master/install.sh | bash
 ```
 
 ## Usage
