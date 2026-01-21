@@ -841,17 +841,16 @@
                 // Create container for mermaid
                 const container = document.createElement('div');
                 container.className = 'mermaid';
-                container.textContent = code;
+                container.innerHTML = code;
 
                 pre.parentNode.replaceChild(container, pre);
+            }
 
-                try {
-                    await mermaid.contentLoaded();
-                    await mermaid.run();
-                } catch (error) {
-                    console.error('Mermaid render error:', error);
-                    container.innerHTML = '<div class="mermaid-error">Failed to render diagram</div>';
-                }
+            // Render all mermaid diagrams at once
+            try {
+                await mermaid.run();
+            } catch (error) {
+                console.error('Mermaid render error:', error);
             }
         }
 
