@@ -825,7 +825,17 @@
         // Render Mermaid diagrams
         async function renderMermaidDiagrams() {
             const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
-            if (codeBlocks.length === 0) return;
+            console.log(`Found ${codeBlocks.length} mermaid code blocks`);
+
+            if (codeBlocks.length === 0) {
+                // Debug: check what code blocks exist
+                const allCodeBlocks = document.querySelectorAll('pre code');
+                console.log(`Total code blocks: ${allCodeBlocks.length}`);
+                allCodeBlocks.forEach((block, i) => {
+                    console.log(`Block ${i} classes:`, block.className);
+                });
+                return;
+            }
 
             // Initialize mermaid with dark mode support
             mermaid.initialize({
@@ -849,6 +859,7 @@
             // Render all mermaid diagrams at once
             try {
                 await mermaid.run();
+                console.log('Mermaid rendered successfully');
             } catch (error) {
                 console.error('Mermaid render error:', error);
             }
@@ -981,7 +992,7 @@
                 // Sanitize HTML to prevent XSS
                 contentDiv.innerHTML = DOMPurify.sanitize(marked.parse(section.content), {
                     USE_PROFILES: { html: true },
-                    ADD_ATTR: ['onerror', 'data-original-src'],
+                    ADD_ATTR: ['onerror', 'data-original-src', 'class'],
                     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
                     FORBID_ATTR: ['onclick', 'onload', 'onmouseover', 'onfocus', 'onblur']
                 });
@@ -1064,7 +1075,7 @@
                 const html = marked.parse(data.content);
                 contentEl.innerHTML = DOMPurify.sanitize(html, {
                     USE_PROFILES: { html: true },
-                    ADD_ATTR: ['onerror', 'data-original-src'], // Allow our image error handler
+                    ADD_ATTR: ['onerror', 'data-original-src', 'class'], // Allow class for code highlighting and mermaid
                     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
                     FORBID_ATTR: ['onclick', 'onload', 'onmouseover', 'onfocus', 'onblur']
                 });
