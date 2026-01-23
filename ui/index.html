@@ -829,12 +829,31 @@
 
             if (codeBlocks.length === 0) return;
 
-            // Initialize mermaid with VS Code-compatible settings
+            // Initialize mermaid with VS Code-compatible settings and custom styling
             mermaid.initialize({
                 startOnLoad: false,
                 maxTextSize: 50000,
                 theme: 'default',
-                securityLevel: 'loose'
+                securityLevel: 'loose',
+                themeVariables: {
+                    // Text and fonts
+                    fontSize: '16px',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    // Primary colors for boxes
+                    primaryColor: '#f0f6fc',
+                    primaryTextColor: '#1f2937',
+                    primaryBorderColor: '#1f2937',
+                    // Lines and connectors
+                    lineColor: '#57606a',
+                    // Secondary boxes
+                    secondBkgColor: '#ffffff',
+                    secondTextColor: '#1f2937',
+                    secondBorderColor: '#1f2937',
+                    // Tertiary
+                    tertiaryColor: '#fef3c7',
+                    tertiaryTextColor: '#1f2937',
+                    tertiaryBorderColor: '#1f2937'
+                }
             });
 
             // Process each diagram
