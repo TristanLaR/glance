@@ -822,7 +822,7 @@
             }
         }
 
-        // Render Mermaid diagrams using client-side mermaid.js (matches VS Code extension)
+        // Render Mermaid diagrams using mermaid.render() (matches VS Code extension)
         async function renderMermaidDiagrams() {
             const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
             console.log(`Found ${codeBlocks.length} mermaid code blocks`);
@@ -833,29 +833,40 @@
             mermaid.initialize({
                 startOnLoad: false,
                 maxTextSize: 50000,
-                theme: 'default',  // Always use default theme for consistent quality
+                theme: 'default',
                 securityLevel: 'loose'
             });
 
             // Process each diagram
             for (const block of codeBlocks) {
-                const code = block.textContent;
+                const source = block.textContent;
                 const pre = block.parentElement;
 
-                // Create mermaid container
+                // Create container for the rendered SVG
                 const container = document.createElement('div');
                 container.className = 'mermaid';
-                container.textContent = code;  // Use textContent to preserve special characters
+                container.id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
 
                 pre.parentNode.replaceChild(container, pre);
-            }
 
-            // Render all diagrams at once
-            try {
-                await mermaid.run();
-                console.log('All Mermaid diagrams rendered successfully');
-            } catch (error) {
-                console.error('Mermaid render error:', error);
+                try {
+                    // Parse the diagram source for validation
+                    await mermaid.parse(source);
+
+                    // Render using mermaid.render() like VS Code does
+                    const renderResult = await mermaid.render(container.id, source);
+                    container.innerHTML = renderResult.svg;
+
+                    // Call bind functions if they exist
+                    if (renderResult.bindFunctions) {
+                        renderResult.bindFunctions(container);
+                    }
+
+                    console.log('Mermaid diagram rendered successfully');
+                } catch (error) {
+                    console.error('Mermaid render error:', error);
+                    container.innerHTML = `<div class="mermaid-error">Error rendering diagram: ${error.message}</div>`;
+                }
             }
         }
 
