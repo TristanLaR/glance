@@ -851,7 +851,7 @@
                 // Create container for mermaid
                 const container = document.createElement('div');
                 container.className = 'mermaid';
-                container.innerHTML = code;
+                container.textContent = code;  // Use textContent to preserve special characters like < and >
 
                 pre.parentNode.replaceChild(container, pre);
             }
