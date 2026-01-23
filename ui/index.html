@@ -837,10 +837,10 @@
                 return;
             }
 
-            // Initialize mermaid with dark mode support
+            // Initialize mermaid - use default theme for best contrast against dark background
             mermaid.initialize({
                 startOnLoad: false,
-                theme: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'forest' : 'default',
+                theme: 'default',
                 securityLevel: 'loose'
             });
 
