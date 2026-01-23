@@ -829,12 +829,52 @@
 
             if (codeBlocks.length === 0) return;
 
-            // Initialize mermaid with VS Code-compatible settings
+            // Initialize mermaid with dark theme and custom styling to match VS Code
             mermaid.initialize({
                 startOnLoad: false,
                 maxTextSize: 50000,
-                theme: 'dark',  // Use dark theme like VS Code extension
-                securityLevel: 'loose'
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    // Background colors - transparent/dark for boxes
+                    background: 'transparent',
+                    primaryColor: 'transparent',
+                    secondaryColor: 'transparent',
+                    tertiaryColor: 'transparent',
+                    mainBkg: 'transparent',
+
+                    // Text colors - white/light
+                    primaryTextColor: '#ffffff',
+                    secondaryTextColor: '#ffffff',
+                    tertiaryTextColor: '#ffffff',
+                    textColor: '#ffffff',
+
+                    // Border colors - light gray
+                    primaryBorderColor: '#6b7280',
+                    secondaryBorderColor: '#6b7280',
+                    tertiaryBorderColor: '#6b7280',
+
+                    // Line colors - white/light
+                    lineColor: '#9ca3af',
+
+                    // Sequence diagram specific
+                    actorBkg: 'transparent',
+                    actorBorder: '#6b7280',
+                    actorTextColor: '#ffffff',
+                    actorLineColor: '#9ca3af',
+                    signalColor: '#ffffff',
+                    signalTextColor: '#ffffff',
+                    sequenceNumberColor: '#ffffff',
+
+                    // Notes and labels
+                    noteBkgColor: 'transparent',
+                    noteBorderColor: '#6b7280',
+                    noteTextColor: '#ffffff',
+
+                    // Activation boxes
+                    activationBkgColor: 'transparent',
+                    activationBorderColor: '#6b7280'
+                }
             });
 
             // Process each diagram
