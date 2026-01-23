@@ -57,7 +57,7 @@
       }
     },
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data:; connect-src 'self' ipc: tauri: https://www.plantuml.com https://mermaid.live"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data:; connect-src 'self' ipc: tauri: https://www.plantuml.com https://mermaid.live https://kroki.io"
     },
     "windows": [
       {

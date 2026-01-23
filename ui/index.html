@@ -10,7 +10,7 @@
     <script src="marked.min.js"></script>
     <script src="purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <!-- Mermaid diagrams are rendered server-side via Kroki.io, no client-side library needed -->
     <!-- highlight.min.js is lazy-loaded only when code blocks are detected -->
     <style>
         * {
@@ -491,18 +491,18 @@
             padding: 16px;
         }
 
-        /* Mermaid diagram styles */
-        .mermaid {
+        /* Mermaid diagram styles (server-side rendered via Kroki) */
+        .mermaid-diagram {
             margin: 16px 0;
             text-align: center;
-            background-color: #ffffff;
+            background-color: transparent;
             border-radius: 8px;
             padding: 16px;
             display: flex;
             justify-content: center;
         }
 
-        .mermaid svg {
+        .mermaid-diagram svg {
             max-width: 100%;
             height: auto;
         }
@@ -822,46 +822,39 @@
             }
         }
 
-        // Render Mermaid diagrams
+        // Render Mermaid diagrams using Kroki.io (server-side rendering for better quality)
         async function renderMermaidDiagrams() {
             const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
             console.log(`Found ${codeBlocks.length} mermaid code blocks`);
 
-            if (codeBlocks.length === 0) {
-                // Debug: check what code blocks exist
-                const allCodeBlocks = document.querySelectorAll('pre code');
-                console.log(`Total code blocks: ${allCodeBlocks.length}`);
-                allCodeBlocks.forEach((block, i) => {
-                    console.log(`Block ${i} classes:`, block.className);
-                });
-                return;
-            }
-
-            // Initialize mermaid with neutral theme (matches VS Code styling)
-            mermaid.initialize({
-                startOnLoad: false,
-                theme: 'neutral',
-                securityLevel: 'loose'
-            });
+            if (codeBlocks.length === 0) return;
 
             for (const block of codeBlocks) {
                 const code = block.textContent;
                 const pre = block.parentElement;
 
-                // Create container for mermaid
-                const container = document.createElement('div');
-                container.className = 'mermaid';
-                container.textContent = code;  // Use textContent to preserve special characters like < and >
+                // Create placeholder while loading
+                const placeholder = document.createElement('div');
+                placeholder.className = 'mermaid-diagram';
+                placeholder.innerHTML = '<div class="mermaid-loading">Rendering diagram...</div>';
+                pre.parentNode.replaceChild(placeholder, pre);
 
-                pre.parentNode.replaceChild(container, pre);
-            }
+                try {
+                    // Use Kroki.io for server-side rendering (same as PlantUML quality)
+                    const encoded = btoa(code);
+                    const response = await fetch(`https://kroki.io/mermaid/svg/${encoded}`);
 
-            // Render all mermaid diagrams at once
-            try {
-                await mermaid.run();
-                console.log('Mermaid rendered successfully');
-            } catch (error) {
-                console.error('Mermaid render error:', error);
+                    if (response.ok) {
+                        const svg = await response.text();
+                        placeholder.innerHTML = `<div class="mermaid-diagram">${svg}</div>`;
+                        console.log('Mermaid diagram rendered successfully');
+                    } else {
+                        placeholder.innerHTML = '<div class="mermaid-error">Failed to render diagram</div>';
+                    }
+                } catch (error) {
+                    console.error('Mermaid render error:', error);
+                    placeholder.innerHTML = '<div class="mermaid-error">Failed to render diagram</div>';
+                }
             }
         }
 
