@@ -168,11 +168,16 @@ fn main() {
             // Try to send to running daemon first
             let absolute_path = fs::canonicalize(&file_path).unwrap_or_else(|_| file_path.clone());
             if send_to_daemon(absolute_path.to_string_lossy().as_ref()) {
-                // Daemon is running and received the file - show window via macOS open command
-                let _ = std::process::Command::new("open")
-                    .arg("-a")
-                    .arg("glance")
-                    .spawn();
+                // Daemon is running and received the file
+                // On macOS, use open command to bring window to front
+                #[cfg(target_os = "macos")]
+                {
+                    let _ = std::process::Command::new("open")
+                        .arg("-a")
+                        .arg("glance")
+                        .spawn();
+                }
+                // On Linux, the socket server handles window focus
                 process::exit(0);
             }
 
