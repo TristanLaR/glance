@@ -13,20 +13,19 @@ use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tauri::Manager;
+use tauri::{Manager, Emitter};
 
 /// Threshold for large file mode (500KB)
 const LARGE_FILE_THRESHOLD: u64 = 500 * 1024;
 
 /// Get the path to the IPC socket for daemon mode
 fn get_socket_path() -> Option<PathBuf> {
-    ProjectDirs::from("com", "glance", "glance")
-        .and_then(|dirs| {
-            // Try runtime_dir first, fall back to cache_dir
-            dirs.runtime_dir()
-                .map(|dir| dir.join("glance.sock"))
-                .or_else(|| Some(dirs.cache_dir().join("glance.sock")))
-        })
+    ProjectDirs::from("com", "glance", "glance").and_then(|dirs| {
+        // Try runtime_dir first, fall back to cache_dir
+        dirs.runtime_dir()
+            .map(|dir| dir.join("glance.sock"))
+            .or_else(|| Some(dirs.cache_dir().join("glance.sock")))
+    })
 }
 
 /// Window state for persistence
@@ -311,8 +310,10 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
 
                                 // Get file metadata
                                 let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
-                                let no_truncate = *state.no_truncate.lock().unwrap_or_else(|e| e.into_inner());
-                                let is_large_file = file_size > LARGE_FILE_THRESHOLD && !no_truncate;
+                                let no_truncate =
+                                    *state.no_truncate.lock().unwrap_or_else(|e| e.into_inner());
+                                let is_large_file =
+                                    file_size > LARGE_FILE_THRESHOLD && !no_truncate;
 
                                 let new_file_name = file_path
                                     .file_name()
@@ -321,24 +322,30 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
 
                                 // Update state (handle poisoned locks gracefully)
                                 {
-                                    let mut content = state.content.lock().unwrap_or_else(|e| e.into_inner());
+                                    let mut content =
+                                        state.content.lock().unwrap_or_else(|e| e.into_inner());
                                     *content = new_content;
                                 }
                                 {
-                                    let mut fp = state.file_path.lock().unwrap_or_else(|e| e.into_inner());
+                                    let mut fp =
+                                        state.file_path.lock().unwrap_or_else(|e| e.into_inner());
                                     *fp = file_path.to_string_lossy().to_string();
                                 }
                                 {
-                                    let mut fn_state = state.file_name.lock().unwrap_or_else(|e| e.into_inner());
+                                    let mut fn_state =
+                                        state.file_name.lock().unwrap_or_else(|e| e.into_inner());
                                     *fn_state = new_file_name.clone();
                                 }
                                 {
-                                    let mut lf = state.is_large_file.lock().unwrap_or_else(|e| e.into_inner());
+                                    let mut lf = state
+                                        .is_large_file
+                                        .lock()
+                                        .unwrap_or_else(|e| e.into_inner());
                                     *lf = is_large_file;
                                 }
 
                                 // Emit event to frontend and show window
-                                if let Some(window) = app_handle.get_window("main") {
+                                if let Some(window) = app_handle.get_webview_window("main") {
                                     let window_title = format!("{} - Glance", new_file_name);
                                     if let Err(e) = window.set_title(&window_title) {
                                         eprintln!("Failed to set window title: {}", e);
@@ -356,7 +363,11 @@ fn start_socket_server(state: Arc<AppState>, app_handle: tauri::AppHandle) {
                                 }
 
                                 // Tell watcher about new file
-                                if let Some(ref sender) = *state.watcher_control.lock().unwrap_or_else(|e| e.into_inner()) {
+                                if let Some(ref sender) = *state
+                                    .watcher_control
+                                    .lock()
+                                    .unwrap_or_else(|e| e.into_inner())
+                                {
                                     let _ = sender.send(file_path);
                                 }
                             }
@@ -374,7 +385,10 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
     let content = state.content.lock().unwrap_or_else(|e| e.into_inner());
     let file_path = state.file_path.lock().unwrap_or_else(|e| e.into_inner());
     let file_name = state.file_name.lock().unwrap_or_else(|e| e.into_inner());
-    let is_large_file = *state.is_large_file.lock().unwrap_or_else(|e| e.into_inner());
+    let is_large_file = *state
+        .is_large_file
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     // Get directory of the markdown file for resolving relative image paths
     let file_dir = PathBuf::from(file_path.as_str())
@@ -417,7 +431,7 @@ fn get_markdown_content(state: tauri::State<AppState>) -> MarkdownContent {
 fn open_dropped_file(
     path: String,
     state: tauri::State<AppState>,
-    window: tauri::Window,
+    window: tauri::WebviewWindow,
 ) -> Result<String, String> {
     let file_path = PathBuf::from(&path);
 
@@ -474,7 +488,10 @@ fn open_dropped_file(
         *file_name_state = new_file_name.clone();
     }
     {
-        let mut large_file_state = state.is_large_file.lock().unwrap_or_else(|e| e.into_inner());
+        let mut large_file_state = state
+            .is_large_file
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *large_file_state = is_large_file;
     }
 
@@ -483,7 +500,11 @@ fn open_dropped_file(
     let _ = window.set_title(&window_title);
 
     // Tell watcher thread to watch new file
-    if let Some(ref sender) = *state.watcher_control.lock().unwrap_or_else(|e| e.into_inner()) {
+    if let Some(ref sender) = *state
+        .watcher_control
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+    {
         let _ = sender.send(absolute_path);
     }
 
@@ -638,6 +659,8 @@ fn run_app(
     let watcher_control_for_socket = watcher_control.clone();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(AppState {
             content: content.clone(),
             file_path: file_path_state.clone(),
@@ -652,7 +675,7 @@ fn run_app(
         ])
         .setup(move |app| {
             // Start the socket server for daemon mode
-            let app_handle = app.handle();
+            let app_handle = app.handle().clone();
             let socket_app_state = AppState {
                 content: content_for_socket.clone(),
                 file_path: file_path_for_socket.clone(),
@@ -663,7 +686,7 @@ fn run_app(
             };
             start_socket_server(Arc::new(socket_app_state), app_handle);
             // Update window title and restore saved position/size
-            if let Some(window) = app.get_window("main") {
+            if let Some(window) = app.get_webview_window("main") {
                 let _ = window.set_title(&window_title);
 
                 // Restore saved window position and size
@@ -676,7 +699,7 @@ fn run_app(
             }
 
             // Set up file watcher with path switching support
-            let app_handle = app.handle();
+            let app_handle = app.handle().clone();
             let content_for_watcher = content.clone();
             let file_path_for_watcher = file_path_state.clone();
 
@@ -685,7 +708,9 @@ fn run_app(
 
             // Store sender in state for later use
             {
-                let mut control = watcher_control_for_setup.lock().unwrap_or_else(|e| e.into_inner());
+                let mut control = watcher_control_for_setup
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 *control = Some(path_tx);
             }
 
@@ -749,7 +774,10 @@ fn run_app(
                             thread::sleep(Duration::from_millis(50));
 
                             // Get current watched path from state
-                            let watched_path = file_path_for_watcher.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                            let watched_path = file_path_for_watcher
+                                .lock()
+                                .unwrap_or_else(|e| e.into_inner())
+                                .clone();
 
                             // Read updated content
                             if let Ok(new_content) = fs::read_to_string(&watched_path) {
@@ -760,7 +788,7 @@ fn run_app(
                                     }
 
                                     // Emit event to frontend
-                                    if let Some(window) = app_handle.get_window("main") {
+                                    if let Some(window) = app_handle.get_webview_window("main") {
                                         let _ = window.emit("file-changed", ());
                                     }
                                 }
@@ -772,12 +800,12 @@ fn run_app(
 
             Ok(())
         })
-        .on_window_event(|event| {
-            match event.event() {
+        .on_window_event(|window, event| {
+            match event {
                 tauri::WindowEvent::CloseRequested { api, .. } => {
                     // Save window state before closing
-                    if let Ok(position) = event.window().outer_position() {
-                        if let Ok(size) = event.window().outer_size() {
+                    if let Ok(position) = window.outer_position() {
+                        if let Ok(size) = window.outer_size() {
                             let state = WindowState {
                                 x: position.x,
                                 y: position.y,
@@ -790,7 +818,7 @@ fn run_app(
                         }
                     }
                     // Hide window instead of closing (daemon mode)
-                    if let Err(e) = event.window().hide() {
+                    if let Err(e) = window.hide() {
                         eprintln!("Failed to hide window: {}", e);
                     }
                     // Prevent the default close behavior

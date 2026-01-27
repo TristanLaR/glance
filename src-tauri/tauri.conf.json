@@ -1,53 +1,12 @@
 {
   "build": {
-    "distDir": "../ui",
-    "devPath": "../ui",
-    "beforeDevCommand": "",
     "beforeBuildCommand": "",
-    "withGlobalTauri": true
+    "frontendDist": "../ui",
+    "beforeDevCommand": ""
   },
-  "package": {
-    "productName": "glance",
-    "version": "0.1.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "dialog": {
-        "open": true
-      },
-      "globalShortcut": {
-        "all": true
-      },
-      "protocol": {
-        "asset": true,
-        "assetScope": ["**"]
-      }
-    },
-    "bundle": {
-      "active": true,
-      "identifier": "com.glance.app",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "targets": "all",
-      "macOS": {
-        "minimumSystemVersion": "10.13",
-        "exceptionDomain": "",
-        "signingIdentity": null,
-        "entitlements": null,
-        "providerShortName": null
-      },
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      },
+  "bundle": {
+    "active": true,
+    "linux": {
       "deb": {
         "depends": [],
         "desktopTemplate": "glance.desktop"
@@ -56,17 +15,53 @@
         "bundleMediaFramework": false
       }
     },
-    "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data:; connect-src 'self' ipc: tauri: https://www.plantuml.com https://mermaid.live"
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "targets": "all",
+    "macOS": {
+      "minimumSystemVersion": "10.13",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null,
+      "providerShortName": null
     },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "productName": "glance",
+  "mainBinaryName": "glance",
+  "version": "0.1.0",
+  "identifier": "com.glance.app",
+  "plugins": {},
+  "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "fullscreen": false,
         "resizable": true,
         "title": "Glance",
         "width": 900,
-        "height": 700
+        "height": 700,
+        "useHttpsScheme": true
       }
-    ]
+    ],
+    "security": {
+      "assetProtocol": {
+        "scope": [
+          "**"
+        ],
+        "enable": true
+      },
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https: data:; connect-src ipc: http://ipc.localhost 'self' ipc: tauri: https://www.plantuml.com https://mermaid.live"
+    }
   }
 }
