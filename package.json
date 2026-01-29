@@ -1,0 +1,22 @@
+{
+  "name": "glance",
+  "version": "1.0.0",
+  "description": "A beautiful, lightning-fast markdown viewer built with Rust. Preview your markdown files instantly from the terminal.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:19962/git/TristanLaR/glance"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "beautiful-mermaid": "^0.1.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2"
+  }
+}
