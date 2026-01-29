@@ -3,6 +3,13 @@ set -euo pipefail
 
 REPO="TristanLaR/glance"
 INSTALL_DIR="/usr/local/bin"
+DRY_RUN="${DRY_RUN:-0}"
+
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) DRY_RUN=1 ;;
+    esac
+done
 
 # --- Helpers ---
 
@@ -47,6 +54,22 @@ case "$OS" in
 esac
 
 URL="https://github.com/$REPO/releases/download/v$VERSION/$ASSET"
+
+if [ "$DRY_RUN" = "1" ]; then
+    info "[dry-run] OS=$OS ARCH=$ARCH"
+    info "[dry-run] Version: $VERSION"
+    info "[dry-run] Asset: $ASSET"
+    info "[dry-run] URL: $URL"
+    HTTP_CODE=$(curl -sL -o /dev/null -w '%{http_code}' "$URL")
+    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+        info "[dry-run] Asset reachable (HTTP $HTTP_CODE)"
+    else
+        warn "[dry-run] Asset returned HTTP $HTTP_CODE"
+    fi
+    info "[dry-run] Install would target: $INSTALL_DIR/glance"
+    info "[dry-run] Done. No changes made."
+    exit 0
+fi
 
 info "Downloading $ASSET..."
 curl -fSL --progress-bar "$URL" -o "$TMPDIR/$ASSET"
