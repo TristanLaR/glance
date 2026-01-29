@@ -1,12 +1,14 @@
 # Glance
 
-A beautiful, lightning-fast markdown viewer built with Rust. Preview your markdown files instantly from the terminal.
+A minimal, fast markdown viewer built with Rust.
 
-## Installation
+## Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/TristanLaR/glance/master/install.sh | bash
 ```
+
+Supports **macOS** and **Linux** (Ubuntu 24.04+). Installs the `glance` CLI and registers as a file handler for `.md` files (right-click > Open With > Glance).
 
 ## Usage
 
@@ -14,16 +16,29 @@ curl -fsSL https://raw.githubusercontent.com/TristanLaR/glance/master/install.sh
 glance README.md
 ```
 
-That's it.
+## Uninstall
 
-## Why Glance?
+**macOS:**
+```bash
+sudo rm /usr/local/bin/glance
+rm -rf /Applications/glance.app
+```
 
-- **Blazingly fast** - Opens files in milliseconds, not seconds
-- **Live preview** - See changes as you type
-- **Beautiful rendering** - Syntax highlighting for 100+ languages
-- **Native dark mode** - Matches your system theme automatically
-- **Lightweight** - Under 2 MB, minimal resource usage
-- **Built with Rust** - Fast, safe, and reliable
+**Linux:**
+```bash
+sudo rm /usr/local/bin/glance
+sudo rm -rf /usr/local/lib/glance
+rm ~/.local/share/applications/glance.desktop
+```
+
+## Features
+
+- **Fast** — opens files in milliseconds
+- **Live preview** — watches for changes and reloads automatically
+- **Syntax highlighting** — 100+ languages, lazy-loaded
+- **Native dark mode** — matches your system theme
+- **Lightweight** — under 2 MB, minimal resource usage
+- **Daemon mode** — subsequent invocations reuse the running instance
 
 ## License
 
