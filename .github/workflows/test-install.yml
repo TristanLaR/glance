@@ -65,6 +65,21 @@ jobs:
       - name: Verify desktop entry has correct Exec
         run: grep -q 'Exec=/usr/local/bin/glance %f' ~/.local/share/applications/glance.desktop
 
+      - name: "Test: --version prints version"
+        run: /usr/local/lib/glance/glance --version | grep -q 'glance'
+
+      - name: "Test: --help prints usage"
+        run: /usr/local/lib/glance/glance --help | grep -q 'USAGE'
+
+      - name: "Test: missing file exits 1"
+        run: |
+          ! /usr/local/lib/glance/glance /tmp/nonexistent.md 2>/dev/null
+
+      - name: "Test: empty file exits 1"
+        run: |
+          touch /tmp/empty.md
+          ! /usr/local/lib/glance/glance /tmp/empty.md 2>/dev/null
+
   test-macos:
     runs-on: macos-latest
     steps:
@@ -107,3 +122,18 @@ jobs:
 
       - name: Verify wrapper script uses open
         run: grep -q 'open "$APP"' /usr/local/bin/glance
+
+      - name: "Test: --version prints version"
+        run: /Applications/glance.app/Contents/MacOS/glance --version | grep -q 'glance'
+
+      - name: "Test: --help prints usage"
+        run: /Applications/glance.app/Contents/MacOS/glance --help | grep -q 'USAGE'
+
+      - name: "Test: missing file exits 1"
+        run: |
+          ! /Applications/glance.app/Contents/MacOS/glance /tmp/nonexistent.md 2>/dev/null
+
+      - name: "Test: empty file exits 1"
+        run: |
+          touch /tmp/empty.md
+          ! /Applications/glance.app/Contents/MacOS/glance /tmp/empty.md 2>/dev/null
