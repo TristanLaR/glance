@@ -1,6 +1,6 @@
 # Glance
 
-A beautiful, lightning-fast markdown viewer built with Rust. Preview your markdown files instantly from the terminal.
+A beautiful, lightning-fast markdown viewer. Preview your markdown files instantly from the terminal. Native Swift on macOS, Tauri/Rust on Linux.
 
 ## Installation
 
@@ -23,7 +23,7 @@ That's it.
 - **Beautiful rendering** - Syntax highlighting for 100+ languages
 - **Native dark mode** - Matches your system theme automatically
 - **Lightweight** - Under 2 MB, minimal resource usage
-- **Built with Rust** - Fast, safe, and reliable
+- **Native** - Swift on macOS, Rust on Linux
 
 ## License
 

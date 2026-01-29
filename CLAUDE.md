@@ -4,103 +4,124 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Glance is a minimal, fast markdown viewer built with Tauri v1.8 (Rust backend + WebView frontend). It features daemon mode for instant file reloading, lazy-loaded syntax highlighting, and cross-platform support (macOS, Linux).
+Glance is a minimal, fast markdown viewer with cross-platform support. It uses a native Swift app on macOS and Tauri (Rust backend + WebView) on Linux. Both platforms share the same frontend UI. Features include daemon mode for instant file reloading, lazy-loaded syntax highlighting, and file watching.
 
 ## Build Commands
 
 ```bash
-# Development with hot reload
-cargo tauri dev
+# macOS (native Swift app)
+cd macos && xcodegen generate && xcodebuild -scheme Glance -configuration Release build
 
-# Production build (creates .app bundle on macOS)
-cargo tauri build
-
-# Rust-only build (faster, no bundling)
+# Linux (Tauri/Rust)
 cd src-tauri && cargo build --release
+
+# Linux development with hot reload
+cargo tauri dev
 ```
 
 ## Architecture
 
-### Backend (src-tauri/src/main.rs)
-- **Daemon Mode**: Uses Unix sockets (`~/.cache/glance/glance.sock`) for IPC. First invocation starts the daemon; subsequent calls send file paths via socket.
-- **AppState**: Thread-safe state using `Arc<Mutex<T>>` for content, file path, file name, large file mode, and watcher control.
-- **File Watcher**: Uses `notify` crate with kqueue on macOS. Watches current file and emits `file-changed` events to frontend.
-- **Window Persistence**: Saves/restores position and size to `~/.config/glance/window.json`.
-- **Large File Mode**: Files >500KB are split into collapsible sections based on markdown headings.
+### Shared Frontend (ui/)
+- `index.html` - Complete frontend (HTML + CSS + vanilla JS)
+- `bridge.js` - Platform abstraction layer (GlanceBridge) that abstracts Tauri IPC vs WKWebView messageHandlers
+- `marked.min.js` - Markdown parser (GitHub Flavored Markdown)
+- `highlight.min.js` - Syntax highlighter (lazy-loaded)
+- `purify.min.js` - XSS sanitizer (DOMPurify)
+- `pako.min.js` - Deflate compression (for PlantUML encoding)
+- `mermaid.min.js` - Mermaid diagram renderer
+- All JS dependencies are bundled locally (no CDN)
 
-### Frontend (ui/index.html)
-- Single HTML file with embedded CSS and vanilla JavaScript (~1020 lines)
-- **Markdown**: `marked.min.js` with GitHub Flavored Markdown
-- **Syntax Highlighting**: `highlight.min.js` (lazy-loaded only when code blocks detected)
-- **XSS Protection**: `purify.min.js` (DOMPurify) sanitizes all rendered HTML
-- **Tauri IPC**: Uses `window.__TAURI__.tauri.invoke()` for backend calls
+### Bridge Layer (ui/bridge.js)
+Abstracts platform differences so index.html works on both Tauri and native macOS:
+- `GlanceBridge.invoke(cmd, args)` - Backend command invocation
+- `GlanceBridge.convertFileSrc(path)` - Local file URL conversion
+- `GlanceBridge.openFileDialog()` - Native file picker
+- `GlanceBridge.listen(event, cb)` - Backend event listener
+- `GlanceBridge._resolve/_reject/_dispatch` - Internal callbacks from native side
+
+### macOS Native (macos/)
+- **AppDelegate.swift** - App lifecycle, daemon setup, CLI arg handling, file open events
+- **MainWindow.swift** - NSWindow with state persistence, drag-and-drop via DragDropView
+- **WebViewController.swift** - WKWebView + WKScriptMessageHandler bridge
+- **FileHandler.swift** - File state, section extraction, markdown content API
+- **FileWatcher.swift** - DispatchSource (kqueue) file watching
+- **DaemonServer.swift** - Unix socket server for single-instance daemon mode
+- **ConfigManager.swift** - config.toml + window.json persistence
+- **CLIHandler.swift** - CLI argument parsing (--help, --version, --no-truncate)
+- **LocalFileScheme.swift** - WKURLSchemeHandler for `glance-asset://` local images
+- **Info.plist** - File associations (.md/.markdown UTI)
+- **project.yml** - XcodeGen project spec (generates Glance.xcodeproj)
+
+### Linux Backend (src-tauri/src/main.rs)
+- **Daemon Mode**: Unix sockets for IPC
+- **AppState**: Thread-safe state using `Arc<Mutex<T>>`
+- **File Watcher**: `notify` crate with kqueue/inotify
+- **Window Persistence**: window.json
+- **Large File Mode**: Files >500KB split into collapsible sections
 
 ### Key Data Flow
-1. CLI args → Rust validates file → checks for daemon via socket
+1. CLI args → validate file → check for daemon via Unix socket
 2. If daemon running: send path via socket → daemon updates state → emits `file-loaded` event
-3. If no daemon: start Tauri app → setup socket server + file watcher
-4. Frontend calls `get_markdown_content` → renders with marked.js + DOMPurify → highlight.js
-
-## Tauri Commands
-
-```rust
-#[tauri::command]
-fn get_markdown_content(state: State<AppState>) -> MarkdownContent  // Returns file content + metadata
-fn open_dropped_file(path: String, state: State<AppState>, window: Window) -> Result<String, String>
-```
+3. If no daemon: start app → setup socket server + file watcher
+4. Frontend calls `GlanceBridge.invoke('get_markdown_content')` → renders with marked.js + DOMPurify → highlight.js
 
 ## Frontend Events
 
 ```javascript
-// Listen for backend events
-await listen('file-changed', () => reloadWithScrollPreserve());  // File watcher triggered
-await listen('file-loaded', () => reloadWithScrollPreserve());   // Daemon received new file
+// Listen for backend events (works on both platforms via bridge)
+await GlanceBridge.listen('file-changed', () => reloadWithScrollPreserve());
+await GlanceBridge.listen('file-loaded', () => reloadWithScrollPreserve());
 ```
 
 ## Security Considerations
 
-- Socket server validates file extensions (.md/.markdown only) and canonicalizes paths
+- Socket server validates file extensions (.md/.markdown/.puml/.plantuml) and canonicalizes paths
 - All markdown HTML is sanitized with DOMPurify before rendering
 - CSP restricts scripts/styles to 'self' only (no external CDN)
-- Mutex locks use `unwrap_or_else(|e| e.into_inner())` to handle poisoned locks
+- macOS: `glance-asset://` scheme only serves local files from disk
+- Rust: Mutex locks use `unwrap_or_else(|e| e.into_inner())` for poisoned lock handling
 
 ## File Structure
 
 ```
-src-tauri/
-  src/main.rs       # All Rust backend logic (735 lines)
-  Cargo.toml        # Dependencies: tauri, notify, directories, serde, toml
-  tauri.conf.json   # Tauri config: CSP, allowlist, window settings
-ui/
-  index.html        # Complete frontend (HTML + CSS + JS)
-  marked.min.js     # Markdown parser
-  highlight.min.js  # Syntax highlighter (lazy-loaded)
-  purify.min.js     # XSS sanitizer
-  *.css             # GitHub markdown styles
+ui/                          # SHARED web assets (both platforms)
+  index.html                 # Complete frontend
+  bridge.js                  # Platform abstraction layer
+  marked.min.js, purify.min.js, highlight.min.js
+  pako.min.js, mermaid.min.js
+  *.css                      # GitHub markdown styles
+
+macos/                       # Native Swift app (macOS)
+  project.yml                # XcodeGen spec
+  Glance.xcodeproj/          # Generated Xcode project
+  Glance/
+    AppDelegate.swift, MainWindow.swift, WebViewController.swift
+    FileHandler.swift, FileWatcher.swift, DaemonServer.swift
+    ConfigManager.swift, CLIHandler.swift, LocalFileScheme.swift
+    Info.plist, Assets.xcassets/
+
+src-tauri/                   # Tauri/Rust (Linux)
+  src/main.rs
+  Cargo.toml, tauri.conf.json
+
 scripts/
-  glance-macos.sh   # macOS launcher (uses `open` command)
-  glance-linux.sh   # Linux launcher (uses `setsid`)
+  glance-macos.sh            # macOS launcher
+  glance-linux.sh            # Linux launcher
 ```
 
 ## Common Patterns
 
-### Adding a new Tauri command
+### Adding a new bridge command
+1. Add handler in `WebViewController.swift` `userContentController` switch
+2. Add handler in `src-tauri/src/main.rs` with `#[tauri::command]`
+3. Call from frontend: `await GlanceBridge.invoke('command_name', { args })`
+
+### macOS: Emitting events to frontend
+```swift
+webView.evaluateJavaScript("GlanceBridge._dispatch('event-name')")
+```
+
+### Linux: Adding a Tauri command
 1. Add function with `#[tauri::command]` in main.rs
 2. Register in `.invoke_handler(tauri::generate_handler![...])`
-3. Call from frontend: `await invoke('command_name', { args })`
-
-### Modifying shared state
-```rust
-// Always use unwrap_or_else for poisoned lock handling
-let mut content = state.content.lock().unwrap_or_else(|e| e.into_inner());
-*content = new_value;
-```
-
-### Emitting events to frontend
-```rust
-if let Some(window) = app_handle.get_window("main") {
-    if let Err(e) = window.emit("event-name", payload) {
-        eprintln!("Failed to emit event: {}", e);
-    }
-}
-```
+3. Call from frontend: `await GlanceBridge.invoke('command_name', { args })`

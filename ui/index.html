@@ -9,8 +9,9 @@
     <link rel="stylesheet" href="hljs-github-dark.min.css" media="(prefers-color-scheme: dark)">
     <script src="marked.min.js"></script>
     <script src="purify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="pako.min.js"></script>
+    <script src="mermaid.min.js"></script>
+    <script src="bridge.js"></script>
     <!-- highlight.min.js is lazy-loaded only when code blocks are detected -->
     <style>
         * {
@@ -690,8 +691,8 @@
                     // Resolve local relative paths
                     if (!isDataUrl && !isRemoteUrl && fileDir) {
                         const resolvedPath = resolveRelativePath(fileDir, src);
-                        // Use Tauri's convertFileSrc for local files
-                        src = window.__TAURI__.core.convertFileSrc(resolvedPath);
+                        // Use bridge to convert local file paths to webview-loadable URLs
+                        src = GlanceBridge.convertFileSrc(resolvedPath);
                     }
 
                     return `<img src="${src}" alt="${alt}"${title} data-original-src="${escapeHtml(originalSrc)}" onerror="handleImageError(this)" style="max-width:100%;height:auto;">`;
@@ -1071,9 +1072,8 @@
             const contentEl = document.getElementById('content');
 
             try {
-                // Get markdown content from Rust backend (Tauri v2 API)
-                const { invoke } = window.__TAURI__.core;
-                const data = await invoke('get_markdown_content');
+                // Get markdown content from backend via bridge
+                const data = await GlanceBridge.invoke('get_markdown_content');
 
                 // Check if no file is loaded (empty content)
                 if (!data.content || data.content.trim() === '') {
@@ -1161,20 +1161,10 @@
         }
 
         async function openFileDialog() {
-            const { open } = window.__TAURI__.dialog;
-            const { invoke } = window.__TAURI__.core;
-
             try {
-                const selected = await open({
-                    filters: [{
-                        name: 'Markdown',
-                        extensions: ['md', 'markdown']
-                    }],
-                    multiple: false
-                });
-
-                if (selected && typeof selected === 'string') {
-                    await invoke('open_dropped_file', { path: selected });
+                const selected = await GlanceBridge.openFileDialog();
+                if (selected) {
+                    await GlanceBridge.invoke('open_dropped_file', { path: selected });
                     await loadContent();
                 }
             } catch (error) {
@@ -1212,8 +1202,6 @@
         }
 
         function setupDragAndDrop() {
-            const { invoke } = window.__TAURI__.core;
-
             // Prevent default drag behaviors
             document.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -1255,7 +1243,7 @@
                 }
 
                 try {
-                    await invoke('open_dropped_file', { path });
+                    await GlanceBridge.invoke('open_dropped_file', { path });
                     // Reload content after successful file open
                     await loadContent();
                 } catch (error) {
@@ -1286,13 +1274,12 @@
             setupKeyboardShortcuts();
 
             // Listen for file change events from backend
-            const { listen } = window.__TAURI__.event;
-            await listen('file-changed', () => {
+            await GlanceBridge.listen('file-changed', () => {
                 reloadWithScrollPreserve();
             });
 
             // Listen for file loaded events (daemon mode - new file via socket)
-            await listen('file-loaded', () => {
+            await GlanceBridge.listen('file-loaded', () => {
                 reloadWithScrollPreserve();
             });
 
