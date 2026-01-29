@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Glance is a minimal, fast markdown viewer built with Tauri v1.8 (Rust backend + WebView frontend). It features daemon mode for instant file reloading, lazy-loaded syntax highlighting, and cross-platform support (macOS, Linux).
+Glance is a minimal, fast markdown viewer built with Tauri 2 (Rust backend + WebView frontend). It features daemon mode for instant file reloading, lazy-loaded syntax highlighting, and cross-platform support (macOS, Linux).
 
 ## Build Commands
 
@@ -77,9 +77,7 @@ ui/
   highlight.min.js  # Syntax highlighter (lazy-loaded)
   purify.min.js     # XSS sanitizer
   *.css             # GitHub markdown styles
-scripts/
-  glance-macos.sh   # macOS launcher (uses `open` command)
-  glance-linux.sh   # Linux launcher (uses `setsid`)
+install.sh          # One-liner installer for macOS and Linux
 ```
 
 ## Common Patterns
