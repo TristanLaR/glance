@@ -11,20 +11,99 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Run ShellCheck
         run: shellcheck install.sh
 
-  dry-run:
-    strategy:
-      matrix:
-        os: [ubuntu-24.04, macos-latest]
-    runs-on: ${{ matrix.os }}
+  test-linux:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate syntax
-        run: bash -n install.sh
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
-      - name: Dry run
-        run: bash install.sh --dry-run
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build binary
+        working-directory: src-tauri
+        run: cargo build --release
+
+      - name: Package test artifact
+        run: |
+          mkdir -p /tmp/artifacts
+          tar -czf /tmp/artifacts/glance-linux-x86_64.tar.gz -C src-tauri/target/release glance
+
+      - name: Run install script
+        run: |
+          GLANCE_VERSION=0.0.0-test \
+          GLANCE_BASE_URL=file:///tmp/artifacts \
+          bash install.sh
+
+      - name: Verify CLI wrapper exists and is executable
+        run: test -x /usr/local/bin/glance
+
+      - name: Verify binary exists and is executable
+        run: test -x /usr/local/lib/glance/glance
+
+      - name: Verify desktop entry exists
+        run: test -f ~/.local/share/applications/glance.desktop
+
+      - name: Verify wrapper script references binary
+        run: grep -q '/usr/local/lib/glance/glance' /usr/local/bin/glance
+
+      - name: Verify wrapper script uses setsid
+        run: grep -q 'setsid' /usr/local/bin/glance
+
+      - name: Verify desktop entry has correct Exec
+        run: grep -q 'Exec=/usr/local/bin/glance %f' ~/.local/share/applications/glance.desktop
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0.0" --locked
+
+      - name: Build app bundle
+        working-directory: src-tauri
+        run: cargo tauri build
+
+      - name: Package test artifact
+        run: |
+          mkdir -p /tmp/artifacts
+          tar -czf /tmp/artifacts/glance-macos.tar.gz -C src-tauri/target/release/bundle/macos glance.app
+
+      - name: Run install script
+        run: |
+          GLANCE_VERSION=0.0.0-test \
+          GLANCE_BASE_URL=file:///tmp/artifacts \
+          bash install.sh
+
+      - name: Verify CLI wrapper exists and is executable
+        run: test -x /usr/local/bin/glance
+
+      - name: Verify app bundle exists
+        run: test -d /Applications/glance.app
+
+      - name: Verify wrapper script references app bundle
+        run: grep -q 'glance.app/Contents/MacOS/glance' /usr/local/bin/glance
+
+      - name: Verify wrapper script uses open
+        run: grep -q 'open "$APP"' /usr/local/bin/glance

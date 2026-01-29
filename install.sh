@@ -31,19 +31,22 @@ ARCH=$(uname -m)
 
 [ "$OS" = "Darwin" ] || [ "$OS" = "Linux" ] || error "Unsupported OS: $OS (macOS and Linux only)"
 
-# --- Version ---
+# --- Version (override: GLANCE_VERSION) ---
 
-info "Fetching latest release..."
-VERSION=$(
-    curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
-        | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v'
-) || true
-
-[ -n "$VERSION" ] || error "Could not determine latest version. Check your network connection."
+if [ -n "${GLANCE_VERSION:-}" ]; then
+    VERSION="$GLANCE_VERSION"
+else
+    info "Fetching latest release..."
+    VERSION=$(
+        curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
+            | grep '"tag_name"' | cut -d'"' -f4 | tr -d 'v'
+    ) || true
+    [ -n "$VERSION" ] || error "Could not determine latest version. Check your network connection."
+fi
 
 info "Installing Glance v$VERSION"
 
-# --- Download ---
+# --- Download (override: GLANCE_BASE_URL) ---
 
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -53,18 +56,24 @@ case "$OS" in
     Linux)  ASSET="glance-linux-x86_64.tar.gz" ;;
 esac
 
-URL="https://github.com/$REPO/releases/download/v$VERSION/$ASSET"
+if [ -n "${GLANCE_BASE_URL:-}" ]; then
+    URL="${GLANCE_BASE_URL}/${ASSET}"
+else
+    URL="https://github.com/$REPO/releases/download/v$VERSION/$ASSET"
+fi
 
 if [ "$DRY_RUN" = "1" ]; then
     info "[dry-run] OS=$OS ARCH=$ARCH"
     info "[dry-run] Version: $VERSION"
     info "[dry-run] Asset: $ASSET"
     info "[dry-run] URL: $URL"
-    HTTP_CODE=$(curl -sL -o /dev/null -w '%{http_code}' "$URL")
-    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
-        info "[dry-run] Asset reachable (HTTP $HTTP_CODE)"
-    else
-        warn "[dry-run] Asset returned HTTP $HTTP_CODE"
+    if [[ "$URL" != file://* ]]; then
+        HTTP_CODE=$(curl -sL -o /dev/null -w '%{http_code}' "$URL")
+        if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+            info "[dry-run] Asset reachable (HTTP $HTTP_CODE)"
+        else
+            warn "[dry-run] Asset returned HTTP $HTTP_CODE"
+        fi
     fi
     info "[dry-run] Install would target: $INSTALL_DIR/glance"
     info "[dry-run] Done. No changes made."
