@@ -14,5 +14,8 @@
 # Ralph TUI (project management tool)
 .ralph-tui/
 
+# Node.js (used for building beautiful-mermaid bundle)
+node_modules/
+
 # Test files
 test.md

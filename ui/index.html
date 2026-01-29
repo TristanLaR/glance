@@ -10,7 +10,7 @@
     <script src="marked.min.js"></script>
     <script src="purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="beautiful-mermaid.min.js"></script>
     <!-- highlight.min.js is lazy-loaded only when code blocks are detected -->
     <style>
         * {
@@ -822,60 +822,18 @@
             }
         }
 
-        // Render Mermaid diagrams using mermaid.render() (matches VS Code extension)
+        // Render Mermaid diagrams using beautiful-mermaid
         async function renderMermaidDiagrams() {
             const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
             console.log(`Found ${codeBlocks.length} mermaid code blocks`);
 
             if (codeBlocks.length === 0) return;
 
-            // Initialize mermaid with dark theme and custom styling to match VS Code
-            mermaid.initialize({
-                startOnLoad: false,
-                maxTextSize: 50000,
-                theme: 'dark',
-                securityLevel: 'loose',
-                themeVariables: {
-                    // Background colors - transparent/dark for boxes
-                    background: 'transparent',
-                    primaryColor: 'transparent',
-                    secondaryColor: 'transparent',
-                    tertiaryColor: 'transparent',
-                    mainBkg: 'transparent',
+            const { renderMermaid, THEMES } = window.beautifulMermaid;
 
-                    // Text colors - white/light
-                    primaryTextColor: '#ffffff',
-                    secondaryTextColor: '#ffffff',
-                    tertiaryTextColor: '#ffffff',
-                    textColor: '#ffffff',
-
-                    // Border colors - light gray
-                    primaryBorderColor: '#6b7280',
-                    secondaryBorderColor: '#6b7280',
-                    tertiaryBorderColor: '#6b7280',
-
-                    // Line colors - white/light
-                    lineColor: '#9ca3af',
-
-                    // Sequence diagram specific
-                    actorBkg: 'transparent',
-                    actorBorder: '#6b7280',
-                    actorTextColor: '#ffffff',
-                    actorLineColor: '#9ca3af',
-                    signalColor: '#ffffff',
-                    signalTextColor: '#ffffff',
-                    sequenceNumberColor: '#ffffff',
-
-                    // Notes and labels
-                    noteBkgColor: 'transparent',
-                    noteBorderColor: '#6b7280',
-                    noteTextColor: '#ffffff',
-
-                    // Activation boxes
-                    activationBkgColor: 'transparent',
-                    activationBorderColor: '#6b7280'
-                }
-            });
+            // Pick theme based on system color scheme
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = isDark ? THEMES['github-dark'] : THEMES['github-light'];
 
             // Process each diagram
             for (const block of codeBlocks) {
@@ -885,23 +843,16 @@
                 // Create container for the rendered SVG
                 const container = document.createElement('div');
                 container.className = 'mermaid';
-                container.id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
 
                 pre.parentNode.replaceChild(container, pre);
 
                 try {
-                    // Parse the diagram source for validation
-                    await mermaid.parse(source);
-
-                    // Render using mermaid.render() like VS Code does
-                    const renderResult = await mermaid.render(container.id, source);
-                    container.innerHTML = renderResult.svg;
-
-                    // Call bind functions if they exist
-                    if (renderResult.bindFunctions) {
-                        renderResult.bindFunctions(container);
-                    }
-
+                    const svg = await renderMermaid(source, {
+                        ...theme,
+                        transparent: true,
+                        font: 'system-ui'
+                    });
+                    container.innerHTML = svg;
                     console.log('Mermaid diagram rendered successfully');
                 } catch (error) {
                     console.error('Mermaid render error:', error);
