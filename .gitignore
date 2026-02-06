@@ -8,6 +8,7 @@
 # Xcode
 macos/Glance.xcodeproj/
 macos/build/
+macos/.build/
 xcuserdata/
 *.xcworkspace/
 
