@@ -5,6 +5,12 @@
 # macOS
 **/.DS_Store
 
+# Xcode
+macos/Glance.xcodeproj/
+macos/build/
+xcuserdata/
+*.xcworkspace/
+
 # IDE
 .idea/
 .vscode/

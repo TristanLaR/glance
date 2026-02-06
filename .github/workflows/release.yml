@@ -9,36 +9,37 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
+  build-macos-native:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install xcodegen
+        run: brew install xcodegen
 
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
+      - name: Generate Xcode project
+        working-directory: macos
+        run: xcodegen generate
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2.0.0" --locked
-
-      - name: Build Tauri app
-        working-directory: src-tauri
-        run: cargo tauri build
+      - name: Build native macOS app
+        working-directory: macos
+        run: |
+          xcodebuild -project Glance.xcodeproj \
+            -scheme Glance \
+            -configuration Release \
+            -derivedDataPath build \
+            build
 
       - name: Create tarball
         run: |
-          cd src-tauri/target/release/bundle/macos
-          tar -czf glance-macos.tar.gz glance.app
+          cd macos/build/Build/Products/Release
+          tar -czf glance-macos.tar.gz Glance.app
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: src-tauri/target/release/bundle/macos/glance-macos.tar.gz
+          path: macos/build/Build/Products/Release/glance-macos.tar.gz
 
   build-linux:
     runs-on: ubuntu-24.04
@@ -74,7 +75,7 @@ jobs:
           path: src-tauri/target/release/glance-linux-x86_64.tar.gz
 
   release:
-    needs: [build-macos, build-linux]
+    needs: [build-macos-native, build-linux]
     runs-on: ubuntu-latest
     steps:
       - name: Download macOS artifact

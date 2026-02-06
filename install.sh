@@ -12,7 +12,7 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
 if [ "$OS" = "darwin" ]; then
-    echo "Installing Glance for macOS..."
+    echo "Installing Glance for macOS (native app)..."
     URL="https://github.com/$REPO/releases/download/v$VERSION/glance-macos.tar.gz"
 
     # Download and extract
@@ -20,12 +20,12 @@ if [ "$OS" = "darwin" ]; then
     tar -xzf /tmp/glance.tar.gz -C /tmp
 
     # Move to Applications
-    rm -rf /Applications/glance.app 2>/dev/null || true
-    mv /tmp/glance.app /Applications/
+    rm -rf /Applications/Glance.app 2>/dev/null || true
+    mv /tmp/Glance.app /Applications/
 
     # Create symlink in /usr/local/bin
     sudo mkdir -p /usr/local/bin
-    sudo ln -sf /Applications/glance.app/Contents/MacOS/glance /usr/local/bin/glance
+    sudo ln -sf /Applications/Glance.app/Contents/MacOS/Glance /usr/local/bin/glance
 
     rm /tmp/glance.tar.gz
     echo "✓ Glance installed! Run: glance file.md"
