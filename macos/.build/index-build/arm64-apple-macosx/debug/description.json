@@ -1,0 +1,359 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+    "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance_Glance.bundle/Assets.xcassets" : {
+      "inputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/Assets.xcassets"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "directory",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance_Glance.bundle/Assets.xcassets"
+        }
+      ]
+    }
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.Glance-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/sources",
+      "importPath" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/CLIHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/ConfigManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/DaemonServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/FileHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/FileWatcher.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/LocalFileScheme.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/MainWindow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/WebViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<Glance-arm64-apple-macosx26.0-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "Glance",
+      "moduleOutputPath" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Modules/Glance.swiftmodule",
+      "objects" : [
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/AppDelegate.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/CLIHandler.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/ConfigManager.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/DaemonServer.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/FileHandler.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/FileWatcher.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/LocalFileScheme.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/MainWindow.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/WebViewController.swift.o",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "Glance_main",
+        "-swift-version",
+        "5",
+        "-Xfrontend",
+        "-experimental-lazy-typecheck",
+        "-Xfrontend",
+        "-experimental-skip-all-function-bodies",
+        "-Xfrontend",
+        "-experimental-allow-module-with-compiler-errors",
+        "-Xfrontend",
+        "-empty-abi-descriptor",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "macos"
+      ],
+      "outputFileMapPath" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Modules/Glance.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : true,
+      "sources" : [
+        "/Users/trilar/Documents/repos/glance/macos/Glance/AppDelegate.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/CLIHandler.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/ConfigManager.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/DaemonServer.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/FileHandler.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/FileWatcher.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/LocalFileScheme.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/MainWindow.swift",
+        "/Users/trilar/Documents/repos/glance/macos/Glance/WebViewController.swift",
+        "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "Glance" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "Glance",
+      "-package-name",
+      "macos",
+      "-c",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/AppDelegate.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/CLIHandler.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/ConfigManager.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/DaemonServer.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/FileHandler.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/FileWatcher.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/LocalFileScheme.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/MainWindow.swift",
+      "/Users/trilar/Documents/repos/glance/macos/Glance/WebViewController.swift",
+      "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "Glance_main",
+      "-swift-version",
+      "5",
+      "-Xfrontend",
+      "-experimental-lazy-typecheck",
+      "-Xfrontend",
+      "-experimental-skip-all-function-bodies",
+      "-Xfrontend",
+      "-experimental-allow-module-with-compiler-errors",
+      "-Xfrontend",
+      "-empty-abi-descriptor",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "macos",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "Glance" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/CLIHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/ConfigManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/DaemonServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/FileHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/FileWatcher.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/LocalFileScheme.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/MainWindow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/Glance/WebViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/Glance.build/sources"
+    },
+    "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/trilar/Documents/repos/glance/macos/.build/index-build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
